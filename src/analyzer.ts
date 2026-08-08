@@ -14,6 +14,11 @@ interface AgentMetadata {
   extension?: string
 }
 
+export interface SocketIoMetadata {
+  agent?: string
+  sessionId?: string
+}
+
 interface DetectedProblem {
   timestamp: string
   epochMs: number
@@ -48,6 +53,17 @@ function metadataFor(text: string): AgentMetadata {
     agent: valueFor(text, 'Agent(?!\\s+ID)'),
     agentId: valueFor(text, 'Agent\\s+ID'),
     extension: valueFor(text, 'Extension'),
+  }
+}
+
+/** Extracts the connection identity from an OpsCentral SocketIO / EFV entry. */
+export function parseSocketIoMetadata(line: string): SocketIoMetadata {
+  const match = line.match(/\[io:\s*([^\s\]]+).*?\]\s*\[\s*([^\]]+?)\s*\]\s*EFV/i)
+  if (!match) return {}
+  const candidate = match[2].trim()
+  return {
+    sessionId: match[1],
+    agent: candidate && candidate.toLowerCase() !== 'undefined' ? candidate : undefined,
   }
 }
 
@@ -128,14 +144,31 @@ function summarize(metadata: AgentMetadata, problems: ProblemTime[]): AgentAnaly
 export function analyzeLog(contents: string, fileName = 'PBX log', groupingWindowMs = DEFAULT_GROUPING_WINDOW_MS): AnalysisResult {
   const physicalLines = contents.split(/\r?\n/)
   const agents = new Map<string, { metadata: AgentMetadata; problems: DetectedProblem[] }>()
+  const sessionAgents = new Map<string, string | undefined>()
   let activeKey: string | undefined
   let ignoredLines = 0
 
+  // Resolve only explicit, unambiguous session-to-Agent relationships. This
+  // permits an undefined entry to follow or precede its named counterpart
+  // without ever guessing from timestamp proximity.
+  physicalLines.forEach((text) => {
+    const socket = parseSocketIoMetadata(text)
+    if (!socket.sessionId || !socket.agent) return
+    const known = sessionAgents.get(socket.sessionId)
+    if (known === undefined && !sessionAgents.has(socket.sessionId)) sessionAgents.set(socket.sessionId, socket.agent)
+    else if (known?.toLowerCase() !== socket.agent.toLowerCase()) sessionAgents.set(socket.sessionId, undefined)
+  })
+
   physicalLines.forEach((text, index) => {
     if (!text.trim()) return
-    const metadata = metadataFor(text)
+    const socket = parseSocketIoMetadata(text)
+    const resolvedSocketAgent = socket.agent ?? (socket.sessionId ? sessionAgents.get(socket.sessionId) : undefined)
+    const conventionalMetadata = metadataFor(text)
+    const metadata = resolvedSocketAgent ? { ...conventionalMetadata, agent: resolvedSocketAgent } : conventionalMetadata
     const explicitKey = keyFor(metadata)
-    let key = metadata.agent || metadata.agentId ? explicitKey : activeKey ?? explicitKey
+    let key = socket.sessionId
+      ? (resolvedSocketAgent ? `agent:${resolvedSocketAgent.toLowerCase()}` : undefined)
+      : metadata.agent || metadata.agentId ? explicitKey : activeKey ?? explicitKey
     if (metadata.agentId && activeKey && activeKey !== key) {
       const pending = agents.get(activeKey)
       if (pending && !pending.metadata.agentId && pending.problems.length === 0) {
@@ -155,7 +188,7 @@ export function analyzeLog(contents: string, fileName = 'PBX log', groupingWindo
     const source: SourceReference = { lineNumber: index + 1, text }
     const indicators = INDICATOR_RULES
       .filter((rule) => rule.pattern.test(text))
-      .map((rule) => ({ label: rule.label, severity: rule.severity, source }))
+      .map((rule) => ({ label: rule.label, severity: rule.severity, sessionId: socket.sessionId, source }))
     if (indicators.length) existing.problems.push({ ...timestamp, indicators })
   })
 

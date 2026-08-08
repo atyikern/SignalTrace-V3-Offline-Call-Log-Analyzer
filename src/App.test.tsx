@@ -21,13 +21,13 @@ describe('App', () => {
     render(<App />)
     await user.upload(screen.getByLabelText('Choose PBX log'), new File([log], 'synthetic.log', { type: 'text/plain' }))
     await waitFor(() => expect(screen.getByRole('heading', { name: 'kumaresan' })).toBeInTheDocument())
-    expect(screen.getByText('604')).toBeInTheDocument()
-    expect(screen.getByText('8041')).toBeInTheDocument()
     expect(screen.getByText('High network instability detected')).toBeInTheDocument()
     const times = screen.getAllByRole('time').map((time) => time.textContent)
     expect(times).toEqual(['09:49:23', '14:51:49'])
     expect(screen.queryByText(/Line \d+/)).not.toBeInTheDocument()
     expect(screen.queryByText('Evidence')).not.toBeInTheDocument()
+    expect(screen.queryByText('Agent ID')).not.toBeInTheDocument()
+    expect(screen.queryByText('Extension')).not.toBeInTheDocument()
   })
 
   it('switches between analyzed Agents without reading the file again', async () => {
@@ -45,6 +45,13 @@ describe('App', () => {
     const user = userEvent.setup()
     render(<App />)
     await user.upload(screen.getByLabelText('Choose PBX log'), new File(['data'], 'network.csv', { type: 'text/csv' }), { applyAccept: false })
-    expect(screen.getByRole('alert')).toHaveTextContent('Choose an Asterisk or FreePBX .log or .txt file.')
+    expect(screen.getByRole('alert')).toHaveTextContent('Choose a supported OpsCentral or PBX .log or .txt file.')
+  })
+
+  it('advertises OpsCentral SocketIO / EFV and Asterisk / FreePBX support', () => {
+    render(<App />)
+    expect(screen.getByText('Supported Logs')).toBeInTheDocument()
+    expect(screen.getByText('OpsCentral SocketIO / EFV')).toBeInTheDocument()
+    expect(screen.getByText('Asterisk / FreePBX')).toBeInTheDocument()
   })
 })

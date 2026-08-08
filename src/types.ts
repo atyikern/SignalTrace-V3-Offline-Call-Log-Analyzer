@@ -9,6 +9,7 @@ export interface SourceReference {
 export interface NetworkIndicator {
   label: string
   severity: NetworkSeverity
+  sessionId?: string
   source: SourceReference
 }
 

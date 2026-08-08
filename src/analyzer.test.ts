@@ -1,8 +1,9 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { analyzeLog, DEFAULT_GROUPING_WINDOW_MS, networkIndicatorRules } from './analyzer'
+import { analyzeLog, DEFAULT_GROUPING_WINDOW_MS, networkIndicatorRules, parseSocketIoMetadata } from './analyzer'
 
 const fixture = readFileSync(new URL('./test/fixtures/agent-network.log', import.meta.url), 'utf8')
+const socketIoFixture = readFileSync(new URL('./test/fixtures/socketio-efv.log', import.meta.url), 'utf8')
 
 describe('analyzeLog', () => {
   it('recognizes every approved severity indicator', () => {
@@ -53,5 +54,52 @@ describe('analyzeLog', () => {
   it('allows a narrower grouping window', () => {
     const agent = analyzeLog(fixture, 'agent-network.log', 500).agents.find((item) => item.agent === 'kumaresan')!
     expect(agent.problemTimes.map((problem) => problem.displayTime)).toEqual(['09:49:23', '09:49:24', '10:43:35', '14:51:49'])
+  })
+
+  it('extracts named and multi-word Agents plus SocketIO session IDs', () => {
+    expect(parseSocketIoMetadata('2026-04-03 09:49:23 - info: [io: 8OgkXo6Sd6HP3VqSAFaH <<== efv: undefined ] [ kumaresan ] EFV ERROR : Error: read ECONNRESET')).toEqual({
+      agent: 'kumaresan', sessionId: '8OgkXo6Sd6HP3VqSAFaH',
+    })
+    expect(parseSocketIoMetadata('[io: sessionCCC <<== efv: undefined ] [ Paul Arshan ] EFV DESTROY')).toEqual({
+      agent: 'Paul Arshan', sessionId: 'sessionCCC',
+    })
+    expect(parseSocketIoMetadata('[io: orphan <<== efv: undefined ] [ undefined ] EFV ERROR')).toEqual({
+      agent: undefined, sessionId: 'orphan',
+    })
+  })
+
+  it('analyzes real-shaped SocketIO / EFV entries by Agent and timestamp', () => {
+    const result = analyzeLog(socketIoFixture, 'socketio-efv.log')
+    expect(result.agents.map((agent) => agent.agent)).toEqual(['kumaresan', 'Paul Arshan', 'Zuhair'])
+    const kumaresan = result.agents[0]
+    expect(kumaresan.problemTimes.map((problem) => problem.displayTime)).toEqual(['09:49:23', '10:43:35', '14:51:49'])
+    expect(kumaresan.problemTimes.map((problem) => problem.indicators.map((indicator) => indicator.label))).toEqual([
+      ['ECONNRESET', 'EFV DESTROY'],
+      ['ECONNRESET', 'EFV DESTROY'],
+      ['ECONNRESET', 'EFV DESTROY'],
+    ])
+    expect(result.agents[1].problemTimes[0].displayTime).toBe('13:35:42')
+    expect(result.agents[2].problemTimes[0].displayTime).toBe('07:07:48')
+  })
+
+  it('associates an undefined Agent only through an exact matching session ID', () => {
+    const result = analyzeLog(socketIoFixture)
+    expect(result.agents.some((agent) => agent.agent.toLowerCase() === 'undefined')).toBe(false)
+    const kumaresan = result.agents.find((agent) => agent.agent === 'kumaresan')!
+    const grouped = kumaresan.problemTimes.find((problem) => problem.displayTime === '14:51:49')!
+    expect(grouped.indicators.map((indicator) => indicator.label)).toEqual(['ECONNRESET', 'EFV DESTROY'])
+    expect(grouped.indicators.every((indicator) => indicator.sessionId === 'sessionEEE')).toBe(true)
+    expect(kumaresan.problemTimes.some((problem) => problem.displayTime === '16:00:00')).toBe(false)
+  })
+
+  it.each([
+    ['econnreset', 'ECONNRESET'], ['efv destroy', 'EFV DESTROY'], ['unreachable', 'Unreachable'],
+    ['broken pipe', 'Broken pipe'], ['websocket error', 'WebSocket disconnect/error'], ['timed out', 'Timeout'],
+    ['connection refused', 'Connection refused'], ['connection reset', 'Connection reset'], ['transport error', 'Transport error'],
+    ['rtp packet loss', 'RTP packet loss'], ['lost packets', 'Lost packets'], ['jitter', 'Jitter'],
+    ['rtp timeout', 'RTP timeout'], ['media timeout', 'Media timeout'],
+  ])('matches %s case-insensitively', (input, expected) => {
+    const log = `2026-04-03 01:02:03 - info: [io: session <<== efv: ok ] [ Example Agent ] EFV ERROR : ${input.toUpperCase()}`
+    expect(analyzeLog(log).agents[0].problemTimes[0].indicators.map((indicator) => indicator.label)).toContain(expected)
   })
 })

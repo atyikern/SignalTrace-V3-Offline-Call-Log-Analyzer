@@ -1,6 +1,6 @@
 # SignalTrace V3 — Offline PBX Call Log Analyzer
 
-SignalTrace V3 is a browser-only network-troubleshooting view for exported Asterisk / FreePBX `.log` and `.txt` files. Its result answers one focused question: **At what times did this Agent experience network disconnection or network instability?**
+SignalTrace V3 is a browser-only network-troubleshooting view for exported OpsCentral SocketIO / EFV and Asterisk / FreePBX `.log` and `.txt` files. Its result answers one focused question: **At what times did this Agent experience network disconnection or network instability?**
 
 ## Privacy and security model
 
@@ -29,7 +29,9 @@ npm run build
 
 ## Analysis behavior
 
-SignalTrace identifies explicit `Agent`, `Agent ID`, and `Extension` fields and associates subsequent timestamped entries with that Agent until a new Agent begins. It detects approved network and media indicators, sorts problem times chronologically, and groups indicators at the same time or within a configurable window. The default grouping window is two seconds. Duplicate indicators inside a group appear once.
+SignalTrace supports both explicit `Agent`, `Agent ID`, and `Extension` metadata and OpsCentral entries shaped like `[io: sessionId <<== efv: ... ] [ Agent Name ] EFV ...`. SocketIO session IDs are retained internally and allow an otherwise unidentified event to be associated only when that exact session also has an explicitly named Agent. Timestamp proximity alone never assigns an unidentified event.
+
+The analyzer detects approved network and media indicators, sorts problem times chronologically, and groups indicators at the same time or within a configurable window. The default grouping window is two seconds. Duplicate indicators inside a group appear once. Both bracketed timestamps and OpsCentral prefixes such as `2026-04-03 09:49:23 - info:` are supported.
 
 Physical source lines and original text are retained internally for diagnostics and automated testing, but the normal result page deliberately does not display source excerpts or line numbers.
 
@@ -62,7 +64,7 @@ Physical source lines and original text are retained internally for diagnostics 
 
 For the selected Agent, the report displays only:
 
-1. Agent, Agent ID, and Extension
+1. Agent
 2. Network Status
 3. Chronologically sorted Problem Times and deduplicated indicators
 4. Finding
@@ -73,7 +75,7 @@ All Agents with detected problems are analyzed on the initial file read. Changin
 
 ## Current limitations
 
-- Agent association requires explicit Agent metadata before the related events. Unscoped entries before that metadata are ignored.
+- Conventional unscoped entries require preceding Agent metadata. SocketIO entries require a named Agent or an exact session ID that is explicitly mapped to one; otherwise they are ignored.
 - Matching is deterministic pattern recognition rather than a complete PBX or SIP protocol parser.
 - The analyzer cannot prove that a network indicator affected an active call or determine what either party heard.
 - It cannot inspect live PBX state, packet paths, firewall/NAT behavior, carrier systems, or endpoint configuration.
