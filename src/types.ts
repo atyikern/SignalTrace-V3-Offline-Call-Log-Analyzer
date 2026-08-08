@@ -1,42 +1,38 @@
-export type Severity = 'observed' | 'warning' | 'error' | 'root-cause'
+export type NetworkSeverity = 'critical' | 'important' | 'media-quality'
 
-export interface Evidence {
+/** Retained internally for diagnostics and tests; never rendered in the normal UI. */
+export interface SourceReference {
   lineNumber: number
   text: string
 }
 
-export interface TimelineEvent {
-  id: string
-  timestamp?: string
-  kind: string
-  summary: string
-  severity: Severity
-  evidence: Evidence
-}
-
-export interface Finding {
-  ruleId: string
-  title: string
-  detail: string
-  severity: Severity
-  evidence: Evidence[]
-  recommendation?: string
-}
-
-export interface AnalyzedCall {
-  callId: string
+export interface NetworkIndicator {
   label: string
-  firstLine: number
-  lastLine: number
-  channels: string[]
-  events: TimelineEvent[]
-  findings: Finding[]
-  cannotConfirm: string[]
+  severity: NetworkSeverity
+  source: SourceReference
+}
+
+export interface ProblemTime {
+  timestamp: string
+  displayTime: string
+  indicators: NetworkIndicator[]
+}
+
+export interface AgentAnalysis {
+  key: string
+  agent: string
+  agentId: string
+  extension: string
+  networkStatus: string
+  problemTimes: ProblemTime[]
+  finding: string
+  possibleImpact: string
+  conclusion: string
 }
 
 export interface AnalysisResult {
   fileName: string
   totalLines: number
   ignoredLines: number
-  calls: AnalyzedCall[]
+  agents: AgentAnalysis[]
 }

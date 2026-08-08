@@ -1,48 +1,57 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { analyzeLog, deterministicRules } from './analyzer'
+import { analyzeLog, DEFAULT_GROUPING_WINDOW_MS, networkIndicatorRules } from './analyzer'
 
-const fixture = readFileSync(new URL('./test/fixtures/multiple-calls.log', import.meta.url), 'utf8')
+const fixture = readFileSync(new URL('./test/fixtures/agent-network.log', import.meta.url), 'utf8')
 
 describe('analyzeLog', () => {
-  it('publishes exactly sixteen deterministic rules', () => {
-    expect(deterministicRules).toHaveLength(16)
-    expect(new Set(deterministicRules.map((rule) => rule.id)).size).toBe(16)
+  it('recognizes every approved severity indicator', () => {
+    expect(networkIndicatorRules.filter((rule) => rule.severity === 'critical').map((rule) => rule.label)).toEqual([
+      'ECONNRESET', 'EFV DESTROY', 'Unreachable', 'Connection reset',
+    ])
+    expect(networkIndicatorRules.filter((rule) => rule.severity === 'important').map((rule) => rule.label)).toEqual([
+      'Broken pipe', 'WebSocket disconnect/error', 'Timeout', 'Connection refused', 'Transport error',
+    ])
+    expect(networkIndicatorRules.filter((rule) => rule.severity === 'media-quality').map((rule) => rule.label)).toEqual([
+      'RTP packet loss', 'Lost packets', 'Jitter', 'RTP timeout', 'Media timeout',
+    ])
   })
 
-  it('separates calls using only exact Asterisk Call IDs', () => {
-    const result = analyzeLog(fixture, 'multiple-calls.log')
-    expect(result.calls.map((call) => call.callId)).toEqual(['C-000001a4', 'C-000001a5'])
-    expect(result.ignoredLines).toBe(1)
-    expect(result.calls[0].lastLine).toBe(3)
-    expect(result.calls[1].firstLine).toBe(4)
+  it('extracts Agent metadata and separates multiple Agents', () => {
+    const result = analyzeLog(fixture, 'agent-network.log')
+    expect(result.agents).toHaveLength(2)
+    expect(result.agents[1]).toMatchObject({ agent: 'kumaresan', agentId: '604', extension: '8041' })
+    expect(result.agents[0]).toMatchObject({ agent: 'amina', agentId: '605', extension: '8042' })
   })
 
-  it('retains exact physical line numbers and original source text', () => {
-    const call = analyzeLog(fixture).calls[0]
-    expect(call.events[2].evidence).toEqual({ lineNumber: 3, text: fixture.split('\n')[2] })
-    expect(call.findings[0].evidence[0].lineNumber).toBe(3)
+  it('sorts all problem times and groups indicators within the configured window', () => {
+    const agent = analyzeLog(fixture).agents.find((item) => item.agent === 'kumaresan')!
+    expect(DEFAULT_GROUPING_WINDOW_MS).toBe(2_000)
+    expect(agent.problemTimes.map((problem) => problem.displayTime)).toEqual(['09:49:23', '10:43:35', '14:51:49'])
+    expect(agent.problemTimes[0].indicators.map((indicator) => indicator.label)).toEqual(['ECONNRESET', 'EFV DESTROY'])
   })
 
-  it('does not correlate lines based on timestamps or channel names', () => {
-    const result = analyzeLog('[2026-01-01 10:00:00] PJSIP/100-0001 answered\n[2026-01-01 10:00:00] DIALSTATUS=BUSY')
-    expect(result.calls).toEqual([])
-    expect(result.ignoredLines).toBe(2)
+  it('deduplicates identical indicators within one grouped problem time', () => {
+    const agent = analyzeLog(fixture).agents.find((item) => item.agent === 'kumaresan')!
+    expect(agent.problemTimes[0].indicators.filter((indicator) => indicator.label === 'EFV DESTROY')).toHaveLength(1)
   })
 
-  it('suppresses an earlier contradictory failure after later success', () => {
-    const result = analyzeLog('[2026-01-01 10:00:00][C-00000001] DIALSTATUS=NOANSWER\n[2026-01-01 10:00:03][C-00000001] PJSIP/200 answered PJSIP/100\n[2026-01-01 10:00:04][C-00000001] Channel PJSIP/200 joined bridge')
-    expect(result.calls[0].findings.map((finding) => finding.ruleId)).not.toContain('PBX-005')
-    expect(result.calls[0].findings.map((finding) => finding.ruleId)).toEqual(expect.arrayContaining(['PBX-015', 'PBX-016']))
+  it('retains source references internally for diagnostics', () => {
+    const agent = analyzeLog(fixture).agents.find((item) => item.agent === 'kumaresan')!
+    expect(agent.problemTimes[0].indicators[0].source).toMatchObject({ lineNumber: 5, text: expect.stringContaining('ECONNRESET') })
   })
 
-  it('does not let an earlier success hide a later explicit failure', () => {
-    const result = analyzeLog('[C-00000001] PJSIP/200 answered PJSIP/100\n[C-00000001] DIALSTATUS=NOANSWER')
-    expect(result.calls[0].findings.map((finding) => finding.ruleId)).toContain('PBX-005')
+  it('uses singular and multiple-event summaries appropriately', () => {
+    const result = analyzeLog(fixture)
+    const single = result.agents.find((item) => item.agent === 'amina')!
+    const multiple = result.agents.find((item) => item.agent === 'kumaresan')!
+    expect(single.finding).toBe('A network disconnection event was detected for this agent.')
+    expect(multiple.finding).toBe('Multiple network disconnection events were detected for this agent during the reviewed period.')
+    expect(multiple.networkStatus).toBe('High network instability detected')
   })
 
-  it('reports evidence boundaries when no root cause is proven', () => {
-    const successfulCall = analyzeLog(fixture).calls[1]
-    expect(successfulCall.cannotConfirm).toContain('A definitive root cause; the available evidence supports observations or symptoms only')
+  it('allows a narrower grouping window', () => {
+    const agent = analyzeLog(fixture, 'agent-network.log', 500).agents.find((item) => item.agent === 'kumaresan')!
+    expect(agent.problemTimes.map((problem) => problem.displayTime)).toEqual(['09:49:23', '09:49:24', '10:43:35', '14:51:49'])
   })
 })
