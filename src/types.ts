@@ -37,7 +37,13 @@ export interface AnalysisResult {
   ignoredLines: number
   agents: AgentAnalysis[]
   extensions: ExtensionNetworkAnalysis[]
+  ivrCalls: IvrCall[]
 }
+
+export type IvrSeverity = 'Critical'|'Failed'|'Warning'|'Healthy'|'Unknown'
+export type IvrEventType = 'NEW_CALL'|'CALL_INITIALIZED'|'IVR_STARTED'|'PROMPT_STARTED'|'PROMPT_COMPLETED'|'COLLECT_DIGITS_STARTED'|'DIGIT_COLLECTED'|'COLLECT_DIGITS_FAILED'|'IVR_RETRY'|'IVR_MAX_RETRIES'|'NEXT_NODE_FAILED'|'ROUTING_SUCCESS'|'ROUTING_FAILED'|'SYSTEM_HANGUP'|'CALL_DISCONNECTED'|'UNKNOWN_ERROR'
+export interface IvrEvent { timestamp?:string; type:IvrEventType; label:string; severity:'info'|'warning'|'error'; digit?:string; errorCode?:string; prompt?:string; rawLine:string; lineNumber:number }
+export interface IvrCall { phoneNumber:string; callId:string; routePoint?:string; taskNumber?:string; campaignId?:string; transactionId?:string; startTime?:string; endTime?:string; callStatus?:string; numberOfRoutes?:number; totalRoutes?:number; events:IvrEvent[]; ivrStatus:IvrSeverity; routingStatus:'Reached'|'Not Reached'|'Unknown'; collectDigitAttempts:number; successfulAttempts:number; failedAttempts:number; primaryFailureStage?:string; systemAction?:string; finding:string; possibleCause:string; possibleImpact:string; conclusion:string; problemScore:number }
 
 export type ReachabilityStatus = 'Reachable' | 'Unreachable'
 export type RttClassification = 'Good' | 'Warning' | 'High' | 'Critical' | 'Unreachable'

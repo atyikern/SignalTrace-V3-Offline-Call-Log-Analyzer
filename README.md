@@ -1,6 +1,6 @@
-# SignalTrace V4 — Log & Network Analyzer
+# SignalTrace V5 — Log, Voice & Network Analyzer
 
-SignalTrace V4 is a browser-only network-troubleshooting view for exported OpsCentral SocketIO / EFV, Asterisk / FreePBX, and PJSIP RTT / Reachability `.log` and `.txt` files. It automatically detects compatible records without requiring a log-type selection.
+SignalTrace V5 is a browser-only network-troubleshooting view for exported OpsCentral SocketIO / EFV, Asterisk / FreePBX, and PJSIP RTT / Reachability `.log` and `.txt` files. It automatically detects compatible records without requiring a log-type selection.
 
 ## Privacy and security model
 
@@ -113,3 +113,8 @@ When multiple Extensions are detected, a separate **Selected Extension** control
 ## Test data
 
 All repository fixtures are synthetic and contain no real phone numbers, credentials, customer data, or production log material.
+
+
+### eFrontVoice-IVR call flow
+
+V5 accepts phone-number grep output from eFrontVoice-IVR logs. Contextual Caller ID patterns identify phone numbers, while Call ID remains the mandatory session boundary. Independent Selected Phone Number and Selected Call controls default to the most severe call (then latest), and never affect Agent or Extension selections. The concise report extracts call metadata, Collect Digits attempts, prompts, retry limits, next-node failures, routing state, system hangup sequences, and disconnection context without assigning unsupported meanings to numeric error or call-status values.

@@ -1,5 +1,6 @@
 import type { AgentAnalysis, AnalysisResult, NetworkIndicator, NetworkSeverity, ProblemTime, SourceReference } from './types'
 import { analyzePjsipNetworks, normalizeLogRecords, parseTimestamp } from './pjsipAnalyzer'
+import { analyzeIvrCalls } from './ivrAnalyzer'
 
 export const DEFAULT_GROUPING_WINDOW_MS = 2_000
 
@@ -196,7 +197,7 @@ export function analyzeLog(contents: string, fileName = 'PBX log', groupingWindo
     .map(({ metadata, problems }) => summarize(metadata, problems))
     .sort((a, b) => a.agent.localeCompare(b.agent))
 
-  return { fileName, totalLines: physicalLines.length, ignoredLines, agents: analyses, extensions: analyzePjsipNetworks(physicalLines) }
+  return { fileName, totalLines: physicalLines.length, ignoredLines, agents: analyses, extensions: analyzePjsipNetworks(physicalLines), ivrCalls: analyzeIvrCalls(physicalLines) }
 }
 
 export const networkIndicatorRules = INDICATOR_RULES.map(({ label, severity }) => ({ label, severity }))

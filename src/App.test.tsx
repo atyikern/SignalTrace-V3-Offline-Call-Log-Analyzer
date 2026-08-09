@@ -2,6 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import App from './App'
+import ivrFixture from './test/fixtures/ivr-call-flow.log?raw'
 
 const log = `Agent: kumaresan Agent ID: 604 Extension: 8041
 [2026-03-14 14:51:49] ECONNRESET EFV DESTROY
@@ -59,8 +60,8 @@ describe('App', () => {
 
   it('advertises OpsCentral SocketIO / EFV and Asterisk / FreePBX support', () => {
     render(<App />)
-    expect(screen.getByRole('button', { name: 'SignalTrace home' })).toHaveTextContent('SignalTrace V4')
-    expect(screen.getByText('Log & Network Analyzer')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'SignalTrace home' })).toHaveTextContent('SignalTrace V5')
+    expect(screen.getByText('Log, Voice & Network Analyzer')).toBeInTheDocument()
     expect(screen.getByText('Supported Logs')).toBeInTheDocument()
     const supportedLogs = screen.getByText('Supported Logs').parentElement!
     expect(supportedLogs).toHaveTextContent('OpsCentral SocketIO / EFV')
@@ -118,5 +119,19 @@ describe('App', () => {
     expect(agentSelector).toHaveValue('id:604')
     expect(screen.getByRole('heading', { name: 'kumaresan' })).toBeInTheDocument()
     expect(screen.getByText('High RTT')).toBeInTheDocument()
+  })
+
+  it('selects the failed IVR call and keeps Phone Number and Call state separate', async () => {
+    const user = userEvent.setup(); render(<App />)
+    await user.upload(screen.getByLabelText('Choose log'), new File([ivrFixture], 'ivr.txt', { type: 'text/plain' }))
+    expect(await screen.findByLabelText('Selected Phone Number')).toHaveValue('+60139610712')
+    const callSelector = screen.getByLabelText('Selected Call')
+    expect(callSelector).toHaveValue('178244679334766')
+    expect(screen.getByText('IVR Call Flow Analysis')).toBeInTheDocument()
+    expect(screen.getByText('Unable to Retrieve Next Node')).toBeInTheDocument()
+    await user.selectOptions(callSelector, '178246906457037')
+    expect(screen.getByText('Healthy')).toBeInTheDocument()
+    expect(screen.queryByText('Unable to Retrieve Next Node')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Selected Phone Number')).toHaveValue('+60139610712')
   })
 })
