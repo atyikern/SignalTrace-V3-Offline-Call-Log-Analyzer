@@ -1,4 +1,5 @@
 export type NetworkSeverity = 'critical' | 'important' | 'media-quality'
+export type LogType = 'socketio-efv' | 'pjsip-rtt' | 'efrontvoice-ivr' | 'efrontvoice'
 
 /** Retained internally for diagnostics and tests; never rendered in the normal UI. */
 export interface SourceReference {
@@ -33,6 +34,7 @@ export interface AgentAnalysis {
 
 export interface AnalysisResult {
   fileName: string
+  logType?: LogType
   totalLines: number
   ignoredLines: number
   agents: AgentAnalysis[]

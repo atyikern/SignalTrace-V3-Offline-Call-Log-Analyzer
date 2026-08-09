@@ -1,4 +1,4 @@
-import type { AgentAnalysis, AnalysisResult, NetworkIndicator, NetworkSeverity, ProblemTime, SourceReference } from './types'
+import type { AgentAnalysis, AnalysisResult, LogType, NetworkIndicator, NetworkSeverity, ProblemTime, SourceReference } from './types'
 import { analyzePjsipNetworks, normalizeLogRecords, parseTimestamp } from './pjsipAnalyzer'
 import { analyzeIvrCalls } from './ivrAnalyzer'
 import { analyzeVoiceCalls, analyzeVoiceExtensions, normalizeEfrontVoiceRecords } from './voiceAnalyzer'
@@ -138,9 +138,13 @@ function summarize(metadata: AgentMetadata, problems: ProblemTime[]): AgentAnaly
   }
 }
 
-export function analyzeLog(contents: string, fileName = 'PBX log', groupingWindowMs = DEFAULT_GROUPING_WINDOW_MS): AnalysisResult {
+export function analyzeLog(contents: string, fileName = 'PBX log', groupingWindowMs = DEFAULT_GROUPING_WINDOW_MS, logType?: LogType): AnalysisResult {
   const physicalLines = normalizeLogRecords(contents)
   const voiceRecords = normalizeEfrontVoiceRecords(contents)
+  const empty = { fileName, logType, totalLines: voiceRecords.length, ignoredLines: 0, agents: [], extensions: [], ivrCalls: [], voiceCalls: [], voiceExtensions: [] }
+  if (logType === 'pjsip-rtt') return { ...empty, extensions: analyzePjsipNetworks(physicalLines) }
+  if (logType === 'efrontvoice-ivr') return { ...empty, ivrCalls: analyzeIvrCalls(physicalLines) }
+  if (logType === 'efrontvoice') return { ...empty, voiceCalls: analyzeVoiceCalls(voiceRecords), voiceExtensions: analyzeVoiceExtensions(voiceRecords) }
   const agents = new Map<string, { metadata: AgentMetadata; problems: DetectedProblem[] }>()
   const sessionAgents = new Map<string, string | undefined>()
   let activeKey: string | undefined
@@ -199,7 +203,8 @@ export function analyzeLog(contents: string, fileName = 'PBX log', groupingWindo
     .map(({ metadata, problems }) => summarize(metadata, problems))
     .sort((a, b) => a.agent.localeCompare(b.agent))
 
-  return { fileName, totalLines: voiceRecords.length, ignoredLines, agents: analyses, extensions: analyzePjsipNetworks(physicalLines), ivrCalls: analyzeIvrCalls(physicalLines), voiceCalls: analyzeVoiceCalls(voiceRecords), voiceExtensions: analyzeVoiceExtensions(voiceRecords) }
+  if (logType === 'socketio-efv') return { ...empty, ignoredLines, agents: analyses }
+  return { fileName, logType, totalLines: voiceRecords.length, ignoredLines, agents: analyses, extensions: analyzePjsipNetworks(physicalLines), ivrCalls: analyzeIvrCalls(physicalLines), voiceCalls: analyzeVoiceCalls(voiceRecords), voiceExtensions: analyzeVoiceExtensions(voiceRecords) }
 }
 
 export const networkIndicatorRules = INDICATOR_RULES.map(({ label, severity }) => ({ label, severity }))

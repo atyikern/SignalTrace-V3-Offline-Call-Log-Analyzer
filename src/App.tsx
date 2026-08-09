@@ -1,7 +1,7 @@
 import { useRef, useState, type ChangeEvent, type DragEvent } from 'react'
 import { AlertTriangle, ChevronDown, FileLock2, FileText, LockKeyhole, Radio, ShieldCheck, Upload } from 'lucide-react'
-import { analyzeLog } from './analyzer'
-import type { AgentAnalysis, AnalysisResult, ExtensionNetworkAnalysis, IvrCall, NetworkSeverity, VoiceCall, VoiceExtensionAnalysis } from './types'
+import { analyzeLog, DEFAULT_GROUPING_WINDOW_MS } from './analyzer'
+import type { AgentAnalysis, AnalysisResult, ExtensionNetworkAnalysis, IvrCall, LogType, NetworkSeverity, VoiceCall, VoiceExtensionAnalysis } from './types'
 
 const ACCEPTED_EXTENSIONS = ['.log', '.txt']
 const MAX_FILE_BYTES = 50 * 1024 * 1024
@@ -12,20 +12,27 @@ const severityLabel: Record<NetworkSeverity, string> = {
   'media-quality': 'Media Quality',
 }
 
-function EmptyState({ onUpload }: { onUpload: () => void }) {
+const LOG_TYPES: Array<{ value: LogType; label: string }> = [
+  { value: 'socketio-efv', label: 'SocketIO / EFV' },
+  { value: 'pjsip-rtt', label: 'PJSIP RTT / Reachability' },
+  { value: 'efrontvoice-ivr', label: 'eFrontVoice-IVR' },
+  { value: 'efrontvoice', label: 'eFrontVoice' },
+]
+
+function EmptyState({ logType, file, onLogType, onUpload, onAnalyze }: { logType: LogType | ''; file?: File; onLogType: (type: LogType | '') => void; onUpload: () => void; onAnalyze: () => void }) {
   return <main className="empty-main">
     <section className="hero-simple">
       <span className="kicker"><span /> Local-first network diagnostics</span>
       <h1>Find exactly when a connection<br /><em>experienced instability.</em></h1>
-      <p>Review network disconnections and media-quality problems in OpsCentral or PBX logs. Sensitive log contents never leave this browser.</p>
-      <button className="primary-button" onClick={onUpload}><Upload size={19} />Upload Log</button>
+      <p>Select the source log type before analyzing. Sensitive log contents never leave this browser.</p>
+      <div className="upload-workflow">
+        <label className="agent-selector"><span>Log Type</span><div><select aria-label="Log Type" value={logType} onChange={(event) => onLogType(event.target.value as LogType | '')} required><option value="">Select log type</option>{LOG_TYPES.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}</select><ChevronDown size={16} /></div></label>
+        <div><span className="upload-label">Upload Log</span><button className="file-button" onClick={onUpload}><FileText size={17} />{file?.name ?? 'Select log file'}</button></div>
+        <button className="primary-button" disabled={!logType || !file} onClick={onAnalyze}><Upload size={19} />Analyze</button>
+      </div>
       <div className="format-note"><FileText size={16} /><span><strong>Supported Logs</strong><small>OpsCentral SocketIO / EFV<br />Asterisk / FreePBX<br />PJSIP RTT / Reachability<br />eFrontVoice Call Routing / Agent<br />.log / .txt · Up to 50 MB</small></span></div>
     </section>
-    <section className="trust-strip">
-      <div><LockKeyhole /><span><strong>Stays on your device</strong><small>Processed in browser memory only.</small></span></div>
-      <div><ShieldCheck /><span><strong>Deterministic analysis</strong><small>Network indicators use explicit matching rules.</small></span></div>
-      <div><FileLock2 /><span><strong>No account. No upload.</strong><small>Close this tab and the log is gone.</small></span></div>
-    </section>
+    <section className="trust-strip"><div><LockKeyhole /><span><strong>Stays on your device</strong><small>Processed in browser memory only.</small></span></div><div><ShieldCheck /><span><strong>Deterministic analysis</strong><small>Only the selected analyzer runs.</small></span></div><div><FileLock2 /><span><strong>No account. No upload.</strong><small>Close this tab and the log is gone.</small></span></div></section>
   </main>
 }
 
@@ -86,7 +93,7 @@ function VoiceExtensionReport({ analysis }: { analysis: VoiceExtensionAnalysis }
 function Results({ result, selectedAgent, selectedExtension, selectedPhoneNumber, selectedIvrCall, selectedVoiceCallerId, selectedVoiceCall, selectedVoiceExtension, onSelectAgent, onSelectExtension, onSelectPhoneNumber, onSelectIvrCall, onSelectVoiceCallerId, onSelectVoiceCall, onSelectVoiceExtension, onReset }: { result: AnalysisResult; selectedAgent?: AgentAnalysis; selectedExtension?: ExtensionNetworkAnalysis; selectedPhoneNumber?: string; selectedIvrCall?: IvrCall; selectedVoiceCallerId?: string; selectedVoiceCall?: VoiceCall; selectedVoiceExtension?: VoiceExtensionAnalysis; onSelectAgent: (key: string) => void; onSelectExtension: (extension: string) => void; onSelectPhoneNumber: (phone: string) => void; onSelectIvrCall: (callId: string) => void; onSelectVoiceCallerId:(id:string)=>void; onSelectVoiceCall:(id:string)=>void; onSelectVoiceExtension:(id:string)=>void; onReset: () => void }) {
   if (!result.agents.length && !result.extensions.length && !result.ivrCalls.length && !result.voiceCalls.length && !result.voiceExtensions.length) return <main className="no-results"><AlertTriangle size={38} /><h2>No network problems found</h2><p>No supported Agent, reachability, or RTT indicators were detected.</p><button className="secondary-button" onClick={onReset}>Choose another log</button></main>
   return <main className="result-page">
-    <div className="result-toolbar"><div className="file-summary"><FileText size={18} /><span><strong>{result.fileName}</strong><small>{result.totalLines.toLocaleString()} records · {result.agents.length} Agents · {result.extensions.length} Extensions · {[...new Set(result.ivrCalls.map((call) => call.phoneNumber))].length} Phone Numbers · {[...new Set(result.voiceCalls.map(call=>call.callerId))].length} Caller IDs · {result.voiceExtensions.length} Voice Extensions</small></span></div><div className="entity-selectors">{selectedVoiceCallerId && <AnalysisEntitySelector label="Selected Voice Caller ID" value={selectedVoiceCallerId} options={[...new Set(result.voiceCalls.map(call=>call.callerId))].map(id=>({value:id,label:id}))} onChange={onSelectVoiceCallerId} />}{selectedVoiceCall && <AnalysisEntitySelector label="Selected Voice Call" value={selectedVoiceCall.callId} options={result.voiceCalls.filter(call=>call.callerId===selectedVoiceCallerId).sort((a,b)=>b.problemScore-a.problemScore).map(call=>({value:call.callId,label:`${timeOnly(call.events[0]?.timestamp)} · Call ID ${call.callId}`}))} onChange={onSelectVoiceCall} />}{selectedVoiceExtension && <AnalysisEntitySelector label="Selected Voice Extension" value={selectedVoiceExtension.extension} options={result.voiceExtensions.map(item=>({value:item.extension,label:item.extension}))} onChange={onSelectVoiceExtension} />}{selectedPhoneNumber && <AnalysisEntitySelector label="Selected Phone Number" value={selectedPhoneNumber} options={[...new Set(result.ivrCalls.map((call) => call.phoneNumber))].map((phone) => ({ value: phone, label: phone }))} onChange={onSelectPhoneNumber} />}{selectedIvrCall && <AnalysisEntitySelector label="Selected Call" value={selectedIvrCall.callId} options={result.ivrCalls.filter((call) => call.phoneNumber === selectedPhoneNumber).sort((a, b) => b.problemScore - a.problemScore || (b.startTime ?? '').localeCompare(a.startTime ?? '')).map((call) => ({ value: call.callId, label: `${timeOnly(call.startTime)} · Call ID ${call.callId}` }))} onChange={onSelectIvrCall} />}{selectedAgent && <AnalysisEntitySelector label="Selected Agent" value={selectedAgent.key} options={result.agents.map((agent) => ({ value: agent.key, label: agent.agent }))} onChange={onSelectAgent} />}{selectedExtension && <AnalysisEntitySelector label="Selected Extension" value={selectedExtension.extension} options={orderExtensionsForDiagnosis(result.extensions).map((extension) => ({ value: extension.extension, label: extension.extension }))} onChange={onSelectExtension} />}</div><button className="new-log" onClick={onReset}><Upload size={15} />New log</button></div>
+    <div className="result-toolbar"><div className="file-summary"><FileText size={18} /><span><strong>{result.fileName}</strong><small>Log Type: {LOG_TYPES.find(type => type.value === result.logType)?.label} · {result.totalLines.toLocaleString()} records · {result.agents.length} Agents · {result.extensions.length} Extensions · {[...new Set(result.ivrCalls.map((call) => call.phoneNumber))].length} Phone Numbers · {[...new Set(result.voiceCalls.map(call=>call.callerId))].length} Caller IDs · {result.voiceExtensions.length} Voice Extensions</small></span></div><div className="entity-selectors">{selectedVoiceCallerId && <AnalysisEntitySelector label="Selected Voice Caller ID" value={selectedVoiceCallerId} options={[...new Set(result.voiceCalls.map(call=>call.callerId))].map(id=>({value:id,label:id}))} onChange={onSelectVoiceCallerId} />}{selectedVoiceCall && <AnalysisEntitySelector label="Selected Voice Call" value={selectedVoiceCall.callId} options={result.voiceCalls.filter(call=>call.callerId===selectedVoiceCallerId).sort((a,b)=>b.problemScore-a.problemScore).map(call=>({value:call.callId,label:`${timeOnly(call.events[0]?.timestamp)} · Call ID ${call.callId}`}))} onChange={onSelectVoiceCall} />}{selectedVoiceExtension && <AnalysisEntitySelector label="Selected Voice Extension" value={selectedVoiceExtension.extension} options={result.voiceExtensions.map(item=>({value:item.extension,label:item.extension}))} onChange={onSelectVoiceExtension} />}{selectedPhoneNumber && <AnalysisEntitySelector label="Selected Phone Number" value={selectedPhoneNumber} options={[...new Set(result.ivrCalls.map((call) => call.phoneNumber))].map((phone) => ({ value: phone, label: phone }))} onChange={onSelectPhoneNumber} />}{selectedIvrCall && <AnalysisEntitySelector label="Selected Call" value={selectedIvrCall.callId} options={result.ivrCalls.filter((call) => call.phoneNumber === selectedPhoneNumber).sort((a, b) => b.problemScore - a.problemScore || (b.startTime ?? '').localeCompare(a.startTime ?? '')).map((call) => ({ value: call.callId, label: `${timeOnly(call.startTime)} · Call ID ${call.callId}` }))} onChange={onSelectIvrCall} />}{selectedAgent && <AnalysisEntitySelector label="Selected Agent" value={selectedAgent.key} options={result.agents.map((agent) => ({ value: agent.key, label: agent.agent }))} onChange={onSelectAgent} />}{selectedExtension && <AnalysisEntitySelector label="Selected Extension" value={selectedExtension.extension} options={orderExtensionsForDiagnosis(result.extensions).map((extension) => ({ value: extension.extension, label: extension.extension }))} onChange={onSelectExtension} />}</div><button className="new-log" onClick={onReset}><Upload size={15} />New log</button></div>
     <h1 className="analysis-title">Analysis Results</h1>
     {selectedAgent && (
     <article className="network-report">
@@ -104,6 +111,8 @@ function Results({ result, selectedAgent, selectedExtension, selectedPhoneNumber
 export default function App() {
   const inputRef = useRef<HTMLInputElement>(null)
   const [result, setResult] = useState<AnalysisResult>()
+  const [selectedLogType, setSelectedLogType] = useState<LogType | ''>('')
+  const [uploadedFile, setUploadedFile] = useState<File>()
   const [selectedAgent, setSelectedAgent] = useState<string>()
   const [selectedExtension, setSelectedExtension] = useState<string>()
   const [selectedPhoneNumber, setSelectedPhoneNumber] = useState<string>()
@@ -114,37 +123,50 @@ export default function App() {
   const [error, setError] = useState<string>()
   const [dragging, setDragging] = useState(false)
 
-  const readFile = (file?: File) => {
-    setError(undefined)
-    if (!file) return
+  const clearAnalysis = () => {
+    setResult(undefined); setSelectedAgent(undefined); setSelectedExtension(undefined)
+    setSelectedPhoneNumber(undefined); setSelectedIvrCallId(undefined)
+    setSelectedVoiceCallerId(undefined); setSelectedVoiceCall(undefined); setSelectedVoiceExtension(undefined)
+  }
+  const selectFile = (file?: File) => {
+    setError(undefined); clearAnalysis()
+    if (!file) return setUploadedFile(undefined)
     const extension = file.name.slice(file.name.lastIndexOf('.')).toLowerCase()
-    if (!ACCEPTED_EXTENSIONS.includes(extension)) return setError('Choose a supported OpsCentral or PBX .log or .txt file.')
-    if (file.size > MAX_FILE_BYTES) return setError('This file is larger than the 50 MB local-analysis limit.')
+    if (!ACCEPTED_EXTENSIONS.includes(extension)) { setUploadedFile(undefined); return setError('Choose a supported OpsCentral or PBX .log or .txt file.') }
+    if (file.size > MAX_FILE_BYTES) { setUploadedFile(undefined); return setError('This file is larger than the 50 MB local-analysis limit.') }
+    setUploadedFile(file)
+  }
+  const analyze = () => {
+    if (!uploadedFile || !selectedLogType) return
+    clearAnalysis()
     const reader = new FileReader()
     reader.onerror = () => setError('The browser could not read this file. No data was uploaded.')
     reader.onload = () => {
       if (typeof reader.result !== 'string') return setError('The selected file could not be read as text.')
-      const analysis = analyzeLog(reader.result, file.name)
+      const analysis = analyzeLog(reader.result, uploadedFile.name, DEFAULT_GROUPING_WINDOW_MS, selectedLogType)
       setResult(analysis)
       setSelectedAgent(analysis.agents[0]?.key)
       setSelectedExtension(orderExtensionsForDiagnosis(analysis.extensions)[0]?.extension)
       const phone = analysis.ivrCalls[0]?.phoneNumber
       setSelectedPhoneNumber(phone)
-      const voiceCaller=analysis.voiceCalls.sort((a,b)=>b.problemScore-a.problemScore)[0]?.callerId
-      setSelectedVoiceCallerId(voiceCaller); setSelectedVoiceCall(analysis.voiceCalls.filter(call=>call.callerId===voiceCaller).sort((a,b)=>b.problemScore-a.problemScore)[0]?.callId); setSelectedVoiceExtension(analysis.voiceExtensions[0]?.extension)
       setSelectedIvrCallId(analysis.ivrCalls.filter((call) => call.phoneNumber === phone).sort((a, b) => b.problemScore - a.problemScore || (b.startTime ?? '').localeCompare(a.startTime ?? ''))[0]?.callId)
+      const voiceCaller = [...analysis.voiceCalls].sort((a,b) => b.problemScore-a.problemScore)[0]?.callerId
+      setSelectedVoiceCallerId(voiceCaller)
+      setSelectedVoiceCall(analysis.voiceCalls.filter(call => call.callerId === voiceCaller).sort((a,b) => b.problemScore-a.problemScore)[0]?.callId)
+      setSelectedVoiceExtension(analysis.voiceExtensions[0]?.extension)
     }
-    reader.readAsText(file)
+    reader.readAsText(uploadedFile)
   }
-  const onInput = (event: ChangeEvent<HTMLInputElement>) => { readFile(event.target.files?.[0]); event.target.value = '' }
-  const onDrop = (event: DragEvent) => { event.preventDefault(); setDragging(false); readFile(event.dataTransfer.files[0]) }
-  const reset = () => { setResult(undefined); setSelectedAgent(undefined); setSelectedExtension(undefined); setSelectedPhoneNumber(undefined); setSelectedIvrCallId(undefined); setSelectedVoiceCallerId(undefined); setSelectedVoiceCall(undefined); setSelectedVoiceExtension(undefined); setError(undefined) }
+  const onInput = (event: ChangeEvent<HTMLInputElement>) => { selectFile(event.target.files?.[0]); event.target.value = '' }
+  const onDrop = (event: DragEvent) => { event.preventDefault(); setDragging(false); selectFile(event.dataTransfer.files[0]) }
+  const changeLogType = (type: LogType | '') => { clearAnalysis(); setSelectedLogType(type) }
+  const reset = () => { clearAnalysis(); setUploadedFile(undefined); setSelectedLogType(''); setError(undefined) }
 
   return <div className="app" onDragOver={(event) => { event.preventDefault(); setDragging(true) }} onDragLeave={() => setDragging(false)} onDrop={onDrop}>
     <header className="app-header"><button className="brand" onClick={reset} aria-label="SignalTrace home"><span className="brand-mark"><i /><i /><i /></span><span><strong>SignalTrace <b>V6</b></strong><small>Log, Voice &amp; Network Analyzer</small></span></button><div className="offline-badge"><span /> Offline mode</div></header>
     <input ref={inputRef} className="visually-hidden" type="file" accept=".log,.txt,text/plain" onChange={onInput} aria-label="Choose log" />
     {error && <div className="error-banner" role="alert"><AlertTriangle size={18} />{error}<button onClick={() => setError(undefined)}>Dismiss</button></div>}
-    {result ? <Results result={result} selectedAgent={result.agents.find((agent) => agent.key === selectedAgent)} selectedExtension={result.extensions.find((extension) => extension.extension === selectedExtension)} selectedPhoneNumber={selectedPhoneNumber} selectedIvrCall={result.ivrCalls.find((call) => call.callId === selectedIvrCallId)} selectedVoiceCallerId={selectedVoiceCallerId} selectedVoiceCall={result.voiceCalls.find(call=>call.callId===selectedVoiceCall)} selectedVoiceExtension={result.voiceExtensions.find(item=>item.extension===selectedVoiceExtension)} onSelectAgent={setSelectedAgent} onSelectExtension={setSelectedExtension} onSelectPhoneNumber={(phone) => { setSelectedPhoneNumber(phone); setSelectedIvrCallId(result.ivrCalls.filter((call) => call.phoneNumber === phone).sort((a, b) => b.problemScore - a.problemScore || (b.startTime ?? "").localeCompare(a.startTime ?? ""))[0]?.callId) }} onSelectIvrCall={setSelectedIvrCallId} onSelectVoiceCallerId={(id)=>{setSelectedVoiceCallerId(id);setSelectedVoiceCall(result.voiceCalls.filter(call=>call.callerId===id).sort((a,b)=>b.problemScore-a.problemScore)[0]?.callId)}} onSelectVoiceCall={setSelectedVoiceCall} onSelectVoiceExtension={setSelectedVoiceExtension} onReset={reset} /> : <EmptyState onUpload={() => inputRef.current?.click()} />}
+    {result ? <Results result={result} selectedAgent={result.agents.find((agent) => agent.key === selectedAgent)} selectedExtension={result.extensions.find((extension) => extension.extension === selectedExtension)} selectedPhoneNumber={selectedPhoneNumber} selectedIvrCall={result.ivrCalls.find((call) => call.callId === selectedIvrCallId)} selectedVoiceCallerId={selectedVoiceCallerId} selectedVoiceCall={result.voiceCalls.find(call=>call.callId===selectedVoiceCall)} selectedVoiceExtension={result.voiceExtensions.find(item=>item.extension===selectedVoiceExtension)} onSelectAgent={setSelectedAgent} onSelectExtension={setSelectedExtension} onSelectPhoneNumber={(phone) => { setSelectedPhoneNumber(phone); setSelectedIvrCallId(result.ivrCalls.filter((call) => call.phoneNumber === phone).sort((a, b) => b.problemScore - a.problemScore || (b.startTime ?? "").localeCompare(a.startTime ?? ""))[0]?.callId) }} onSelectIvrCall={setSelectedIvrCallId} onSelectVoiceCallerId={(id)=>{setSelectedVoiceCallerId(id);setSelectedVoiceCall(result.voiceCalls.filter(call=>call.callerId===id).sort((a,b)=>b.problemScore-a.problemScore)[0]?.callId)}} onSelectVoiceCall={setSelectedVoiceCall} onSelectVoiceExtension={setSelectedVoiceExtension} onReset={reset} /> : <EmptyState logType={selectedLogType} file={uploadedFile} onLogType={changeLogType} onUpload={() => inputRef.current?.click()} onAnalyze={analyze} />}
     {!result && <footer><p>Offline analysis only. SignalTrace analyzes the uploaded log and does not connect to your PBX server.</p><p>Uploaded logs are processed locally and are not permanently stored.</p></footer>}
     {dragging && <div className="drop-overlay"><Upload size={36} /><strong>Drop PBX log to analyze locally</strong></div>}
   </div>

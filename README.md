@@ -129,3 +129,7 @@ eFrontVoice-IVR timestamps accept both `YYYY-MM-DD HH:mm:ss,SSS` production reco
 V6 adds independent **Selected Voice Caller ID**, **Selected Voice Call**, and **Selected Voice Extension** workflows. The parser splits concatenated millisecond-timestamp records, keeps calls isolated by explicit Call ID, aggregates repeated Agent searches, and recognizes transaction creation, Agent booking, ringing, connection, talk, disconnect, and hold evidence. A prolonged search remains a warning when a later connection proves routing succeeded.
 
 Extension analysis recognizes login, SIP/WebRTC registration, monitoring, explicit Extension states, PBX connectivity, calls, and monitor shutdown. An ignored `agentTerminalNotReady` is treated as a recovered warning when later presence or call activity proves operation; it is not automatically promoted to a failure.
+
+### Explicit log-type selection
+
+Before reading a file, SignalTrace requires the support engineer to select **SocketIO / EFV**, **PJSIP RTT / Reachability**, **eFrontVoice-IVR**, or **eFrontVoice**. The Analyze action remains disabled until both a type and local file are selected. Only the selected parser executes, so normal eFrontVoice messages such as `IvrClientHandler` or `100|IVR|` cannot create an IVR report. Selecting a replacement file and using **New log** clear all prior results and entity selections.

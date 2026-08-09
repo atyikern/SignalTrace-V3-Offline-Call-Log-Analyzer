@@ -11,6 +11,13 @@ const log = `Agent: kumaresan Agent ID: 604 Extension: 8041
 Agent: amina Agent ID: 605 Extension: 8042
 [2026-03-14 11:02:01] Broken pipe`
 
+
+async function uploadAndAnalyze(user: ReturnType<typeof userEvent.setup>, contents: string, name: string, type: 'socketio-efv'|'pjsip-rtt'|'efrontvoice-ivr'|'efrontvoice') {
+  await user.selectOptions(screen.getByLabelText('Log Type'), type)
+  await user.upload(screen.getByLabelText('Choose log'), new File([contents], name, { type: 'text/plain' }))
+  await user.click(screen.getByRole('button', { name: 'Analyze' }))
+}
+
 const multipleExtensions = `[2026-08-09 03:00:00] VERBOSE[1] res_pjsip/pjsip_options.c: Contact 23177003/sip:a@10.0.0.3:50003;transport=ws is now Reachable. RTT: 25.000 msec
 [2026-08-09 04:31:49] VERBOSE[2] res_pjsip/pjsip_options.c: Contact 23177011/sip:b@10.0.0.11:50011;transport=ws is now Unreachable. RTT: 0.000 msec
 [2026-08-09 04:32:46] VERBOSE[3] res_pjsip/pjsip_options.c: Contact 23177011/sip:b@10.0.0.11:50011;transport=ws is now Reachable. RTT: 116.253 msec
@@ -28,7 +35,7 @@ describe('App', () => {
   it('shows a concise, chronological Agent network report without source details', async () => {
     const user = userEvent.setup()
     render(<App />)
-    await user.upload(screen.getByLabelText('Choose log'), new File([log], 'synthetic.log', { type: 'text/plain' }))
+    await uploadAndAnalyze(user, log, 'synthetic.log', 'socketio-efv')
     await user.selectOptions(await screen.findByLabelText('Selected Agent'), 'id:604')
     await waitFor(() => expect(screen.getByRole('heading', { name: 'kumaresan' })).toBeInTheDocument())
     expect(screen.getByText('High network instability detected')).toBeInTheDocument()
@@ -44,7 +51,7 @@ describe('App', () => {
   it('switches between analyzed Agents without reading the file again', async () => {
     const user = userEvent.setup()
     render(<App />)
-    await user.upload(screen.getByLabelText('Choose log'), new File([log], 'synthetic.txt', { type: 'text/plain' }))
+    await uploadAndAnalyze(user, log, 'synthetic.txt', 'socketio-efv')
     const selector = await screen.findByLabelText('Selected Agent')
     await user.selectOptions(selector, 'id:605')
     expect(screen.getByRole('heading', { name: 'amina' })).toBeInTheDocument()
@@ -75,7 +82,7 @@ describe('App', () => {
 [2026-08-09 04:32:46] VERBOSE[2] res_pjsip/pjsip_options.c: Contact 23177011/sip:test@10.0.0.1:50000;transport=ws is now Reachable. RTT: 116.253 msec`
     const user = userEvent.setup()
     render(<App />)
-    await user.upload(screen.getByLabelText('Choose log'), new File([pjsip], 'pjsip.log', { type: 'text/plain' }))
+    await uploadAndAnalyze(user, pjsip, 'pjsip.log', 'pjsip-rtt')
     const selector = await screen.findByLabelText('Selected Extension')
     expect(selector).toHaveValue('23177011')
     expect(screen.queryByRole('heading', { name: '23177011' })).not.toBeInTheDocument()
@@ -88,7 +95,7 @@ describe('App', () => {
   it('deduplicates, prioritizes, and naturally orders multiple Extension options', async () => {
     const user = userEvent.setup()
     render(<App />)
-    await user.upload(screen.getByLabelText('Choose log'), new File([multipleExtensions], 'rtt.log', { type: 'text/plain' }))
+    await uploadAndAnalyze(user, multipleExtensions, 'rtt.log', 'pjsip-rtt')
     const selector = await screen.findByLabelText('Selected Extension')
     expect(selector).toHaveValue('23177011')
     expect(within(selector).getAllByRole('option').map((option) => option.textContent)).toEqual(['23177011', '8041', '23177003'])
@@ -97,7 +104,7 @@ describe('App', () => {
   it('changes only the displayed Extension report when selected', async () => {
     const user = userEvent.setup()
     render(<App />)
-    await user.upload(screen.getByLabelText('Choose log'), new File([multipleExtensions], 'rtt.txt', { type: 'text/plain' }))
+    await uploadAndAnalyze(user, multipleExtensions, 'rtt.txt', 'pjsip-rtt')
     const selector = await screen.findByLabelText('Selected Extension')
     expect(screen.getByText('Unstable')).toBeInTheDocument()
     expect(screen.getByText('116.253 ms')).toBeInTheDocument()
@@ -106,25 +113,10 @@ describe('App', () => {
     expect(screen.queryByText('116.253 ms')).not.toBeInTheDocument()
   })
 
-  it('keeps Agent and Extension selections independent in a mixed log', async () => {
-    const user = userEvent.setup()
-    render(<App />)
-    await user.upload(screen.getByLabelText('Choose log'), new File([`${log}\n${multipleExtensions}`], 'mixed.log', { type: 'text/plain' }))
-    const agentSelector = await screen.findByLabelText('Selected Agent')
-    const extensionSelector = screen.getByLabelText('Selected Extension')
-    expect(agentSelector).toHaveValue('id:605')
-    expect(extensionSelector).toHaveValue('23177011')
-    await user.selectOptions(agentSelector, 'id:604')
-    expect(extensionSelector).toHaveValue('23177011')
-    await user.selectOptions(extensionSelector, '8041')
-    expect(agentSelector).toHaveValue('id:604')
-    expect(screen.getByRole('heading', { name: 'kumaresan' })).toBeInTheDocument()
-    expect(screen.getByText('High RTT')).toBeInTheDocument()
-  })
 
   it('selects the failed IVR call and keeps Phone Number and Call state separate', async () => {
     const user = userEvent.setup(); render(<App />)
-    await user.upload(screen.getByLabelText('Choose log'), new File([ivrFixture], 'ivr.txt', { type: 'text/plain' }))
+    await uploadAndAnalyze(user, ivrFixture, 'ivr.txt', 'efrontvoice-ivr')
     expect(await screen.findByLabelText('Selected Phone Number')).toHaveValue('+60139610712')
     const callSelector = screen.getByLabelText('Selected Call')
     expect(callSelector).toHaveValue('178244679334766')
@@ -140,13 +132,55 @@ describe('App', () => {
   })
   it('keeps independent eFrontVoice Caller and Call selectors and defaults to the failed call', async () => {
     const user=userEvent.setup(); render(<App />)
-    await user.upload(screen.getByLabelText('Choose log'),new File([voiceFixture],'voice.txt',{type:'text/plain'}))
+    await uploadAndAnalyze(user, voiceFixture, 'voice.txt', 'efrontvoice')
     expect(await screen.findByLabelText('Selected Voice Caller ID')).toHaveValue('96946315')
     const calls=screen.getByLabelText('Selected Voice Call'); expect(calls).toHaveValue('178606822570871')
     expect(screen.getByText('Not Reached')).toBeInTheDocument()
     await user.selectOptions(calls,'178606822570870')
     expect(screen.getByText('Successful')).toBeInTheDocument()
     expect(within(screen.getByText('Caller ID Routing Analysis').closest('article')!).getByText('Agent ID').parentElement).toHaveTextContent('21')
+  })
+
+  it('requires both a Log Type and file before analysis', async () => {
+    const user=userEvent.setup(); render(<App />)
+    const analyze=screen.getByRole('button',{name:'Analyze'})
+    expect(screen.getByLabelText('Log Type')).toBeRequired(); expect(analyze).toBeDisabled()
+    await user.selectOptions(screen.getByLabelText('Log Type'),'efrontvoice'); expect(analyze).toBeDisabled()
+    await user.upload(screen.getByLabelText('Choose log'),new File([voiceFixture],'voice.log',{type:'text/plain'})); expect(analyze).toBeEnabled()
+  })
+
+  it('uses eFrontVoice selection as source of truth despite internal IVR communication strings', async () => {
+    const user=userEvent.setup(); render(<App />)
+    await uploadAndAnalyze(user, `${voiceFixture}\n2026-08-07 17:02:00,000 DEBUG IvrClientHandler CallFrontIvrCommandReceiver RoutingEntry 100|IVR|`, 'voice.log', 'efrontvoice')
+    expect(await screen.findByText('Caller ID Routing Analysis')).toBeInTheDocument()
+    expect(screen.queryByText('IVR Call Flow Analysis')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Selected Phone Number')).not.toBeInTheDocument()
+  })
+
+  it('runs only the explicitly selected IVR analyzer', async () => {
+    const user=userEvent.setup(); render(<App />)
+    await uploadAndAnalyze(user, ivrFixture, 'ivr.log', 'efrontvoice-ivr')
+    expect(await screen.findByText('IVR Call Flow Analysis')).toBeInTheDocument()
+    expect(screen.queryByText('Caller ID Routing Analysis')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Selected Voice Caller ID')).not.toBeInTheDocument()
+  })
+
+  it('New log clears results, file, and selected Log Type', async () => {
+    const user=userEvent.setup(); render(<App />)
+    await uploadAndAnalyze(user, voiceFixture, 'voice.log', 'efrontvoice')
+    await user.click(await screen.findByRole('button',{name:/New log/i}))
+    expect(screen.getByLabelText('Log Type')).toHaveValue('')
+    expect(screen.getByRole('button',{name:'Analyze'})).toBeDisabled()
+    expect(screen.queryByText('Caller ID Routing Analysis')).not.toBeInTheDocument()
+    expect(screen.getByRole('button',{name:/Select log file/i})).toBeInTheDocument()
+  })
+
+  it('selecting a new file clears the previous result before analysis', async () => {
+    const user=userEvent.setup(); render(<App />)
+    await uploadAndAnalyze(user, voiceFixture, 'first.log', 'efrontvoice')
+    await user.upload(screen.getByLabelText('Choose log'),new File([voiceFixture],'second.log',{type:'text/plain'}))
+    expect(screen.queryByText('Caller ID Routing Analysis')).not.toBeInTheDocument()
+    expect(screen.getByRole('button',{name:'Analyze'})).toBeEnabled()
   })
 
 })
