@@ -1,4 +1,4 @@
-# SignalTrace V5 — Log, Voice & Network Analyzer
+# SignalTrace V6 — Log, Voice & Network Analyzer
 
 SignalTrace V5 is a browser-only network-troubleshooting view for exported OpsCentral SocketIO / EFV, Asterisk / FreePBX, and PJSIP RTT / Reachability `.log` and `.txt` files. It automatically detects compatible records without requiring a log-type selection.
 
@@ -122,3 +122,10 @@ V5 accepts phone-number grep output from eFrontVoice-IVR logs. Contextual Caller
 #### IVR timestamp and campaign terminology
 
 eFrontVoice-IVR timestamps accept both `YYYY-MM-DD HH:mm:ss,SSS` production records and second-only records. Milliseconds are retained for stable event ordering while the timeline displays `HH:mm:ss`. The internal `routePoint` remains compatible with earlier data, but V5 exposes it to support engineers as the **Campaign Phone Number**. Collect Digits attempts count only configuration/start records containing `minNumOfDigits`; waiting and result lines never create extra attempts.
+
+
+### eFrontVoice call routing and Agent Extension analysis
+
+V6 adds independent **Selected Voice Caller ID**, **Selected Voice Call**, and **Selected Voice Extension** workflows. The parser splits concatenated millisecond-timestamp records, keeps calls isolated by explicit Call ID, aggregates repeated Agent searches, and recognizes transaction creation, Agent booking, ringing, connection, talk, disconnect, and hold evidence. A prolonged search remains a warning when a later connection proves routing succeeded.
+
+Extension analysis recognizes login, SIP/WebRTC registration, monitoring, explicit Extension states, PBX connectivity, calls, and monitor shutdown. An ignored `agentTerminalNotReady` is treated as a recovered warning when later presence or call activity proves operation; it is not automatically promoted to a failure.

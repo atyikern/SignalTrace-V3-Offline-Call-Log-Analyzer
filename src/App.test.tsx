@@ -2,6 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import App from './App'
+import voiceFixture from './test/fixtures/voice-routing.log?raw'
 import ivrFixture from './test/fixtures/ivr-call-flow.log?raw'
 
 const log = `Agent: kumaresan Agent ID: 604 Extension: 8041
@@ -60,7 +61,7 @@ describe('App', () => {
 
   it('advertises OpsCentral SocketIO / EFV and Asterisk / FreePBX support', () => {
     render(<App />)
-    expect(screen.getByRole('button', { name: 'SignalTrace home' })).toHaveTextContent('SignalTrace V5')
+    expect(screen.getByRole('button', { name: 'SignalTrace home' })).toHaveTextContent('SignalTrace V6')
     expect(screen.getByText('Log, Voice & Network Analyzer')).toBeInTheDocument()
     expect(screen.getByText('Supported Logs')).toBeInTheDocument()
     const supportedLogs = screen.getByText('Supported Logs').parentElement!
@@ -137,4 +138,15 @@ describe('App', () => {
     expect(screen.queryByText('Unable to Retrieve Next Node')).not.toBeInTheDocument()
     expect(screen.getByLabelText('Selected Phone Number')).toHaveValue('+60139610712')
   })
+  it('keeps independent eFrontVoice Caller and Call selectors and defaults to the failed call', async () => {
+    const user=userEvent.setup(); render(<App />)
+    await user.upload(screen.getByLabelText('Choose log'),new File([voiceFixture],'voice.txt',{type:'text/plain'}))
+    expect(await screen.findByLabelText('Selected Voice Caller ID')).toHaveValue('96946315')
+    const calls=screen.getByLabelText('Selected Voice Call'); expect(calls).toHaveValue('178606822570871')
+    expect(screen.getByText('Not Reached')).toBeInTheDocument()
+    await user.selectOptions(calls,'178606822570870')
+    expect(screen.getByText('Successful')).toBeInTheDocument()
+    expect(within(screen.getByText('Caller ID Routing Analysis').closest('article')!).getByText('Agent ID').parentElement).toHaveTextContent('21')
+  })
+
 })
