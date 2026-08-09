@@ -156,12 +156,15 @@ export function analyzeLog(contents: string, fileName = 'PBX log', groupingWindo
 
   physicalLines.forEach((text, index) => {
     if (!text.trim()) return
+    // PJSIP RTT records are analyzed independently by Extension below and
+    // must not inherit the active SocketIO/EFV Agent in a mixed log.
+    if (/res_pjsip\/pjsip_options\.c/i.test(text)) return
     const socket = parseSocketIoMetadata(text)
     const resolvedSocketAgent = socket.agent ?? (socket.sessionId ? sessionAgents.get(socket.sessionId) : undefined)
     const conventionalMetadata = metadataFor(text)
     const metadata = resolvedSocketAgent ? { ...conventionalMetadata, agent: resolvedSocketAgent } : conventionalMetadata
     const explicitKey = keyFor(metadata)
-    let key = socket.sessionId
+    const key = socket.sessionId
       ? (resolvedSocketAgent ? `agent:${resolvedSocketAgent.toLowerCase()}` : undefined)
       : metadata.agent || metadata.agentId ? explicitKey : activeKey ?? explicitKey
     if (metadata.agentId && activeKey && activeKey !== key) {

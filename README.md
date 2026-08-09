@@ -100,6 +100,8 @@ PJSIP reports display:
 
 No report displays source evidence or parser internals.
 
+When multiple Extensions are detected, a separate **Selected Extension** control shows one report at a time. Options are deduplicated and ordered with Extensions that have Unreachable events or RTT spikes first, followed by network severity and natural Extension order. The initial selection therefore opens the most diagnostically useful Extension. Mixed files retain independent Selected Agent and Selected Extension controls.
+
 ## Current limitations
 
 - Conventional unscoped entries require preceding Agent metadata. SocketIO entries require a named Agent or an exact session ID that is explicitly mapped to one; otherwise they are ignored.

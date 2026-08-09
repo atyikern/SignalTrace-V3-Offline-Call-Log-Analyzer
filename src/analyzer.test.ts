@@ -1,9 +1,7 @@
-import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { analyzeLog, DEFAULT_GROUPING_WINDOW_MS, networkIndicatorRules, parseSocketIoMetadata } from './analyzer'
-
-const fixture = readFileSync(new URL('./test/fixtures/agent-network.log', import.meta.url), 'utf8')
-const socketIoFixture = readFileSync(new URL('./test/fixtures/socketio-efv.log', import.meta.url), 'utf8')
+import fixture from './test/fixtures/agent-network.log?raw'
+import socketIoFixture from './test/fixtures/socketio-efv.log?raw'
 
 describe('analyzeLog', () => {
   it('recognizes every approved severity indicator', () => {

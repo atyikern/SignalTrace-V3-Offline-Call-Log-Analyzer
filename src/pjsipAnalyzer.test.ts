@@ -1,6 +1,7 @@
-import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { analyzeLog } from './analyzer'
+import highRttFixture from './test/fixtures/pjsip-high-rtt.log?raw'
+import rttFixture from './test/fixtures/pjsip-rtt.log?raw'
 import {
   analyzePjsipNetworks,
   classifyRtt,
@@ -12,8 +13,6 @@ import {
   RTT_WARNING_MS,
 } from './pjsipAnalyzer'
 
-const rttFixture = readFileSync(new URL('./test/fixtures/pjsip-rtt.log', import.meta.url), 'utf8')
-const highRttFixture = readFileSync(new URL('./test/fixtures/pjsip-high-rtt.log', import.meta.url), 'utf8')
 const unreachable = '[2026-08-09 04:31:49] VERBOSE[1] res_pjsip/pjsip_options.c: Contact 23177011/sip:test1@175.144.16.141:62750;transport=ws is now Unreachable. RTT: 0.000 msec'
 const reachable = '[2026-08-09 04:32:46] VERBOSE[2] res_pjsip/pjsip_options.c: Contact 23177011/sip:test1@175.144.16.141:62750;transport=ws is now Reachable. RTT: 116.253 msec'
 
