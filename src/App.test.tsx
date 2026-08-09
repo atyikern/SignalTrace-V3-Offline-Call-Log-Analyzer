@@ -19,7 +19,7 @@ describe('App', () => {
   it('shows a concise, chronological Agent network report without source details', async () => {
     const user = userEvent.setup()
     render(<App />)
-    await user.upload(screen.getByLabelText('Choose PBX log'), new File([log], 'synthetic.log', { type: 'text/plain' }))
+    await user.upload(screen.getByLabelText('Choose log'), new File([log], 'synthetic.log', { type: 'text/plain' }))
     await waitFor(() => expect(screen.getByRole('heading', { name: 'kumaresan' })).toBeInTheDocument())
     expect(screen.getByText('High network instability detected')).toBeInTheDocument()
     const times = screen.getAllByRole('time').map((time) => time.textContent)
@@ -33,7 +33,7 @@ describe('App', () => {
   it('switches between analyzed Agents without reading the file again', async () => {
     const user = userEvent.setup()
     render(<App />)
-    await user.upload(screen.getByLabelText('Choose PBX log'), new File([log], 'synthetic.txt', { type: 'text/plain' }))
+    await user.upload(screen.getByLabelText('Choose log'), new File([log], 'synthetic.txt', { type: 'text/plain' }))
     const selector = await screen.findByLabelText('Selected Agent')
     await user.selectOptions(selector, 'id:605')
     expect(screen.getByRole('heading', { name: 'amina' })).toBeInTheDocument()
@@ -44,14 +44,30 @@ describe('App', () => {
   it('rejects unsupported file extensions before reading', async () => {
     const user = userEvent.setup()
     render(<App />)
-    await user.upload(screen.getByLabelText('Choose PBX log'), new File(['data'], 'network.csv', { type: 'text/csv' }), { applyAccept: false })
+    await user.upload(screen.getByLabelText('Choose log'), new File(['data'], 'network.csv', { type: 'text/csv' }), { applyAccept: false })
     expect(screen.getByRole('alert')).toHaveTextContent('Choose a supported OpsCentral or PBX .log or .txt file.')
   })
 
   it('advertises OpsCentral SocketIO / EFV and Asterisk / FreePBX support', () => {
     render(<App />)
+    expect(screen.getByRole('button', { name: 'SignalTrace home' })).toHaveTextContent('SignalTrace V4')
+    expect(screen.getByText('Log & Network Analyzer')).toBeInTheDocument()
     expect(screen.getByText('Supported Logs')).toBeInTheDocument()
     expect(screen.getByText('OpsCentral SocketIO / EFV')).toBeInTheDocument()
     expect(screen.getByText('Asterisk / FreePBX')).toBeInTheDocument()
+    expect(screen.getByText('PJSIP RTT / Reachability')).toBeInTheDocument()
+  })
+
+  it('automatically renders an Extension reachability report without an Agent', async () => {
+    const pjsip = `[2026-08-09 04:31:49] VERBOSE[1] res_pjsip/pjsip_options.c: Contact 23177011/sip:test@10.0.0.1:50000;transport=ws is now Unreachable. RTT: 0.000 msec
+[2026-08-09 04:32:46] VERBOSE[2] res_pjsip/pjsip_options.c: Contact 23177011/sip:test@10.0.0.1:50000;transport=ws is now Reachable. RTT: 116.253 msec`
+    const user = userEvent.setup()
+    render(<App />)
+    await user.upload(screen.getByLabelText('Choose log'), new File([pjsip], 'pjsip.log', { type: 'text/plain' }))
+    expect(await screen.findByRole('heading', { name: '23177011' })).toBeInTheDocument()
+    expect(screen.getByText('RTT Warning')).toBeInTheDocument()
+    expect(screen.getByText('Reachable')).toBeInTheDocument()
+    expect(screen.getByText('Recovered after 57 sec')).toBeInTheDocument()
+    expect(screen.queryByText('Evidence')).not.toBeInTheDocument()
   })
 })

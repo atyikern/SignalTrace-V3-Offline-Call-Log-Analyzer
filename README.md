@@ -1,6 +1,6 @@
-# SignalTrace V3 — Offline PBX Call Log Analyzer
+# SignalTrace V4 — Log & Network Analyzer
 
-SignalTrace V3 is a browser-only network-troubleshooting view for exported OpsCentral SocketIO / EFV and Asterisk / FreePBX `.log` and `.txt` files. Its result answers one focused question: **At what times did this Agent experience network disconnection or network instability?**
+SignalTrace V4 is a browser-only network-troubleshooting view for exported OpsCentral SocketIO / EFV, Asterisk / FreePBX, and PJSIP RTT / Reachability `.log` and `.txt` files. It automatically detects compatible records without requiring a log-type selection.
 
 ## Privacy and security model
 
@@ -35,6 +35,22 @@ The analyzer detects approved network and media indicators, sorts problem times 
 
 Physical source lines and original text are retained internally for diagnostics and automated testing, but the normal result page deliberately does not display source excerpts or line numbers.
 
+### PJSIP RTT and reachability
+
+PJSIP option events are grouped independently by Extension. SignalTrace extracts each event's Reachable/Unreachable status, numeric RTT, timestamp, IP address, port, transport, and contact identity. Concatenated Asterisk records are split whenever a new bracketed timestamp begins.
+
+Reachable RTT values use adjustable thresholds:
+
+- **Good:** below 100 ms
+- **Warning:** 100 ms through 199.999 ms
+- **High:** 200 ms through 499.999 ms
+- **Critical:** 500 ms or more
+- **Unreachable:** any Unreachable status, including RTT `0.000`
+
+Unreachable RTT zeroes never enter the rolling RTT baseline. Reachable events at or above the Warning threshold, or with a significant increase over recent reachable values, are marked as RTT spikes. Exact contact identity is preferred when matching a recovery to an outage.
+
+Per-Extension results track current status separately from overall network status, plus Unreachable event count, recovery count, longest outage, highest and average reachable RTT, and spike count.
+
 ### Severity rules
 
 **Critical**
@@ -62,7 +78,7 @@ Physical source lines and original text are retained internally for diagnostics 
 
 ## Result presentation
 
-For the selected Agent, the report displays only:
+Agent reports display:
 
 1. Agent
 2. Network Status
@@ -72,6 +88,17 @@ For the selected Agent, the report displays only:
 6. Conclusion
 
 All Agents with detected problems are analyzed on the initial file read. Changing the selection does not reread the file.
+
+PJSIP reports display:
+
+1. Extension
+2. Network Status and Current Status
+3. Chronological Problem Times
+4. Finding
+5. Possible Impact
+6. Conclusion
+
+No report displays source evidence or parser internals.
 
 ## Current limitations
 

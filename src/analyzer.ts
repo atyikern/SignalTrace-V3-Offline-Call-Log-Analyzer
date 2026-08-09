@@ -1,4 +1,5 @@
 import type { AgentAnalysis, AnalysisResult, NetworkIndicator, NetworkSeverity, ProblemTime, SourceReference } from './types'
+import { analyzePjsipNetworks, normalizeLogRecords, parseTimestamp } from './pjsipAnalyzer'
 
 export const DEFAULT_GROUPING_WINDOW_MS = 2_000
 
@@ -42,8 +43,6 @@ const INDICATOR_RULES: IndicatorRule[] = [
   { label: 'Media timeout', severity: 'media-quality', pattern: /\bmedia timeout\b/i },
 ]
 
-const TIMESTAMP_PATTERN = /(?:^|\[|\s)(\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?|\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?)(?:\]|\s|$)/
-
 function valueFor(text: string, label: string): string | undefined {
   return text.match(new RegExp(`\\b${label}\\s*[:=]\\s*["']?([\\w.@+-]+)`, 'i'))?.[1]
 }
@@ -68,11 +67,7 @@ export function parseSocketIoMetadata(line: string): SocketIoMetadata {
 }
 
 function timestampFor(text: string): { timestamp: string; epochMs: number } | undefined {
-  const timestamp = text.match(TIMESTAMP_PATTERN)?.[1]
-  if (!timestamp) return undefined
-  const normalized = timestamp.includes('-') ? timestamp.replace(' ', 'T') : `1970-01-01T${timestamp}`
-  const epochMs = Date.parse(normalized)
-  return Number.isNaN(epochMs) ? undefined : { timestamp, epochMs }
+  return parseTimestamp(text)
 }
 
 function displayTime(timestamp: string): string {
@@ -142,7 +137,7 @@ function summarize(metadata: AgentMetadata, problems: ProblemTime[]): AgentAnaly
 }
 
 export function analyzeLog(contents: string, fileName = 'PBX log', groupingWindowMs = DEFAULT_GROUPING_WINDOW_MS): AnalysisResult {
-  const physicalLines = contents.split(/\r?\n/)
+  const physicalLines = normalizeLogRecords(contents)
   const agents = new Map<string, { metadata: AgentMetadata; problems: DetectedProblem[] }>()
   const sessionAgents = new Map<string, string | undefined>()
   let activeKey: string | undefined
@@ -198,7 +193,7 @@ export function analyzeLog(contents: string, fileName = 'PBX log', groupingWindo
     .map(({ metadata, problems }) => summarize(metadata, problems))
     .sort((a, b) => a.agent.localeCompare(b.agent))
 
-  return { fileName, totalLines: physicalLines.length, ignoredLines, agents: analyses }
+  return { fileName, totalLines: physicalLines.length, ignoredLines, agents: analyses, extensions: analyzePjsipNetworks(physicalLines) }
 }
 
 export const networkIndicatorRules = INDICATOR_RULES.map(({ label, severity }) => ({ label, severity }))
