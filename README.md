@@ -1,6 +1,6 @@
-# SignalTrace V6 — Log, Voice & Network Analyzer
+# SignalTrace V7 — Log, Voice & Network Analyzer
 
-SignalTrace V5 is a browser-only network-troubleshooting view for exported OpsCentral SocketIO / EFV, Asterisk / FreePBX, and PJSIP RTT / Reachability `.log` and `.txt` files. It automatically detects compatible records without requiring a log-type selection.
+SignalTrace V7 is a browser-only troubleshooting view for exported OpsCentral SocketIO / EFV, Asterisk / FreePBX, Asterisk-IVR, PJSIP RTT / Reachability, and eFrontVoice `.log` and `.txt` files. The required log-type selection ensures that only the intended deterministic analyzer runs.
 
 ## Privacy and security model
 
@@ -133,3 +133,7 @@ Extension analysis recognizes login, SIP/WebRTC registration, monitoring, explic
 ### Explicit log-type selection
 
 Before reading a file, SignalTrace requires the support engineer to select **SocketIO / EFV**, **PJSIP RTT / Reachability**, **eFrontVoice-IVR**, or **eFrontVoice**. The Analyze action remains disabled until both a type and local file are selected. Only the selected parser executes, so normal eFrontVoice messages such as `IvrClientHandler` or `100|IVR|` cannot create an IVR report. Selecting a replacement file and using **New log** clear all prior results and entity selections.
+
+### Asterisk-IVR call routing
+
+V7 adds an explicit **Asterisk-IVR** log type. Calls are conservatively isolated by Process ID, linked ID, unique ID, and only then Caller ID/time fallback. The report distinguishes answered or normally transferred calls from `BUSY`, `CHANUNAVAIL`, `NOANSWER`, and incomplete routing, includes a selected-call evidence timeline and ring duration, and recommends status-specific checks without executing commands. `NORMACAUSE` alone is never treated as proof of answer.

@@ -2,6 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import App from './App'
+import asteriskIvrFixture from './test/fixtures/asterisk-ivr.log?raw'
 import voiceFixture from './test/fixtures/voice-routing.log?raw'
 import ivrFixture from './test/fixtures/ivr-call-flow.log?raw'
 
@@ -12,7 +13,7 @@ Agent: amina Agent ID: 605 Extension: 8042
 [2026-03-14 11:02:01] Broken pipe`
 
 
-async function uploadAndAnalyze(user: ReturnType<typeof userEvent.setup>, contents: string, name: string, type: 'socketio-efv'|'pjsip-rtt'|'efrontvoice-ivr'|'efrontvoice') {
+async function uploadAndAnalyze(user: ReturnType<typeof userEvent.setup>, contents: string, name: string, type: 'socketio-efv'|'pjsip-rtt'|'efrontvoice-ivr'|'efrontvoice'|'asterisk-ivr') {
   await user.selectOptions(screen.getByLabelText('Log Type'), type)
   await user.upload(screen.getByLabelText('Choose log'), new File([contents], name, { type: 'text/plain' }))
   await user.click(screen.getByRole('button', { name: 'Analyze' }))
@@ -68,7 +69,7 @@ describe('App', () => {
 
   it('advertises OpsCentral SocketIO / EFV and Asterisk / FreePBX support', () => {
     render(<App />)
-    expect(screen.getByRole('button', { name: 'SignalTrace home' })).toHaveTextContent('SignalTrace V6')
+    expect(screen.getByRole('button', { name: 'SignalTrace home' })).toHaveTextContent('SignalTrace V7')
     expect(screen.getByText('Log, Voice & Network Analyzer')).toBeInTheDocument()
     expect(screen.getByText('Supported Logs')).toBeInTheDocument()
     const supportedLogs = screen.getByText('Supported Logs').parentElement!
@@ -181,6 +182,19 @@ describe('App', () => {
     await user.upload(screen.getByLabelText('Choose log'),new File([voiceFixture],'second.log',{type:'text/plain'}))
     expect(screen.queryByText('Caller ID Routing Analysis')).not.toBeInTheDocument()
     expect(screen.getByRole('button',{name:'Analyze'})).toBeEnabled()
+  })
+
+  it('runs only Asterisk-IVR analysis and switches isolated calls', async () => {
+    const user=userEvent.setup();render(<App />)
+    await uploadAndAnalyze(user,asteriskIvrFixture,'asterisk-ivr.log','asterisk-ivr')
+    expect(await screen.findByText('Selected call routing analysis')).toBeInTheDocument()
+    expect(screen.queryByText('IVR Call Flow Analysis')).not.toBeInTheDocument()
+    expect(screen.queryByText('Agent Extension Analysis')).not.toBeInTheDocument()
+    const selector=screen.getByLabelText('Selected Call');expect(selector).toHaveValue('process:94')
+    expect(screen.getAllByText('Channel Unavailable').length).toBeGreaterThan(1)
+    await user.selectOptions(selector,'process:92')
+    expect(screen.getAllByText('Successfully Transferred').length).toBeGreaterThan(0)
+    expect(screen.getByText('11 sec')).toBeInTheDocument()
   })
 
 })

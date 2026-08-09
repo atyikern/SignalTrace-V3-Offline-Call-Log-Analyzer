@@ -1,5 +1,5 @@
 export type NetworkSeverity = 'critical' | 'important' | 'media-quality'
-export type LogType = 'socketio-efv' | 'pjsip-rtt' | 'efrontvoice-ivr' | 'efrontvoice'
+export type LogType = 'socketio-efv' | 'pjsip-rtt' | 'efrontvoice-ivr' | 'efrontvoice' | 'asterisk-ivr'
 
 /** Retained internally for diagnostics and tests; never rendered in the normal UI. */
 export interface SourceReference {
@@ -42,6 +42,7 @@ export interface AnalysisResult {
   ivrCalls: IvrCall[]
   voiceCalls: VoiceCall[]
   voiceExtensions: VoiceExtensionAnalysis[]
+  asteriskIvrCalls: AsteriskIvrCall[]
 }
 
 
@@ -99,3 +100,7 @@ export interface ExtensionNetworkAnalysis {
   metrics: ExtensionMetrics
   events: PjsipRttEvent[]
 }
+
+export type AsteriskIvrRoutingResult = 'Successfully Answered' | 'Successfully Transferred' | 'Busy' | 'Channel Unavailable' | 'No Answer' | 'Incomplete / Unknown'
+export interface AsteriskIvrEvent { timestamp?: string; epochMs?: number; lineNumber: number; type: 'INBOUND'|'DIAL'|'RINGING'|'ANSWERED'|'TRANSFER'|'STATUS'; label: string; rawLine: string }
+export interface AsteriskIvrCall { key:string; processId?:string; callerId?:string; dnis?:string; agentExtension?:string; dialStatus?:string; linkedId?:string; uniqueId?:string; sourceChannel?:string; destinationChannel?:string; startTimestamp?:string; ringingTimestamp?:string; answeredTimestamp?:string; transferResult?:string; routingResult:AsteriskIvrRoutingResult; ringDurationSeconds?:number; events:AsteriskIvrEvent[]; finding:string; recommendedActions:string[]; problemScore:number }
