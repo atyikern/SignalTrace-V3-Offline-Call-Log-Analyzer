@@ -118,3 +118,7 @@ All repository fixtures are synthetic and contain no real phone numbers, credent
 ### eFrontVoice-IVR call flow
 
 V5 accepts phone-number grep output from eFrontVoice-IVR logs. Contextual Caller ID patterns identify phone numbers, while Call ID remains the mandatory session boundary. Independent Selected Phone Number and Selected Call controls default to the most severe call (then latest), and never affect Agent or Extension selections. The concise report extracts call metadata, Collect Digits attempts, prompts, retry limits, next-node failures, routing state, system hangup sequences, and disconnection context without assigning unsupported meanings to numeric error or call-status values.
+
+#### IVR timestamp and campaign terminology
+
+eFrontVoice-IVR timestamps accept both `YYYY-MM-DD HH:mm:ss,SSS` production records and second-only records. Milliseconds are retained for stable event ordering while the timeline displays `HH:mm:ss`. The internal `routePoint` remains compatible with earlier data, but V5 exposes it to support engineers as the **Campaign Phone Number**. Collect Digits attempts count only configuration/start records containing `minNumOfDigits`; waiting and result lines never create extra attempts.

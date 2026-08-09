@@ -1,5 +1,10 @@
 import type { IvrCall, IvrEvent, IvrEventType, IvrSeverity } from './types'
-import { parseTimestamp } from './pjsipAnalyzer'
+export function parseIvrTimestamp(line: string) {
+  const match = line.match(/^(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2}:\d{2})(?:,(\d{3}))?/) ?? line.match(/^\[(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2}:\d{2})(?:[.,](\d{3}))?\]/)
+  if (!match) return undefined
+  const timestamp = `${match[1]} ${match[2]}${match[3] ? `,${match[3]}` : ''}`
+  return { timestamp, date: match[1], time: match[2], milliseconds: match[3], timestampMs: Date.parse(`${match[1]}T${match[2]}.${match[3] ?? '000'}`) }
+}
 
 export function parseIvrContext(line: string) {
   const routed = line.match(/Routed Call\[([\s\S]*?)\]/i)?.[1] ?? line
@@ -13,8 +18,8 @@ export function parseIvrContext(line: string) {
 }
 
 function eventFor(line: string, lineNumber: number): IvrEvent | undefined {
-  const timestamp = parseTimestamp(line)?.timestamp
-  const base = { timestamp, rawLine: line, lineNumber, severity: 'info' as const }
+  const parsedTimestamp = parseIvrTimestamp(line)
+  const base = { timestamp: parsedTimestamp?.timestamp, timestampMs: parsedTimestamp?.timestampMs, timestampParseFailed: !parsedTimestamp, rawLine: line, lineNumber, severity: 'info' as const }
   const make = (type: IvrEventType, label: string, extra = {}): IvrEvent => ({ ...base, type, label, ...extra })
   if (/\bNEWCAL\b/i.test(line)) return make('NEW_CALL', 'Incoming Call')
   if (/Routed Call\[/i.test(line)) return make('CALL_INITIALIZED', 'Call Initialized')
@@ -23,7 +28,7 @@ function eventFor(line: string, lineNumber: number): IvrEvent | undefined {
   const prompt = line.match(/doPlayPrompt\(\).*?prompt\s*:\s*([^,\s]+)/i)?.[1]
   if (prompt) return make('PROMPT_STARTED', `Prompt ${prompt}`, { prompt })
   if (/OnPlayPrompt\(/i.test(line)) return make('PROMPT_COMPLETED', 'Prompt Completed')
-  if (/doCollectDigits\(/i.test(line) && !/digits collected\s*:/i.test(line)) return make('COLLECT_DIGITS_STARTED', 'Collect Digits Started')
+  if (/doCollectDigits\(\).*?minNumOfDigits/i.test(line)) return make('COLLECT_DIGITS_STARTED', 'Collect Digits Started')
   const failed = line.match(/OnCollectDigits\(\).*?unable to collect digits.*?error\s*:\s*([^,\s]+).*?collected digits\s*:\s*([^,\s]+)/i)
   if (failed) return make('COLLECT_DIGITS_FAILED', 'Collect Digits Failed', { severity: 'error', errorCode: failed[1], digit: failed[2] })
   const digit = line.match(/digits collected\s*:\s*([^,\s]+)/i)?.[1]
@@ -40,7 +45,7 @@ function eventFor(line: string, lineNumber: number): IvrEvent | undefined {
 }
 
 function finish(call: IvrCall): IvrCall {
-  const events = call.events.sort((a,b)=>(a.timestamp??'').localeCompare(b.timestamp??''))
+  const events = call.events.sort((a,b)=>(a.timestampMs ?? Number.MAX_SAFE_INTEGER) - (b.timestampMs ?? Number.MAX_SAFE_INTEGER) || a.lineNumber - b.lineNumber)
   const attempts = events.filter(e=>e.type==='COLLECT_DIGITS_STARTED').length
   const failed = events.filter(e=>e.type==='COLLECT_DIGITS_FAILED').length
   const successful = events.filter(e=>e.type==='DIGIT_COLLECTED').length
@@ -67,7 +72,7 @@ export function analyzeIvrCalls(records: string[]): IvrCall[] {
   const calls=new Map<string,IvrCall>(); let activeCallId:string|undefined; let activePhone:string|undefined
   records.forEach((line,index)=>{ const ctx=parseIvrContext(line); activeCallId=ctx.callId??activeCallId; activePhone=ctx.phoneNumber??activePhone; if(!activeCallId||!activePhone)return
     const call=calls.get(activeCallId)??{phoneNumber:activePhone,callId:activeCallId,events:[],ivrStatus:'Unknown',routingStatus:'Unknown',collectDigitAttempts:0,successfulAttempts:0,failedAttempts:0,finding:'',possibleCause:'',possibleImpact:'',conclusion:'',problemScore:0}
-    call.phoneNumber=ctx.phoneNumber??call.phoneNumber; call.routePoint=ctx.routePoint??call.routePoint; call.taskNumber=ctx.taskNumber??call.taskNumber
+    call.phoneNumber=ctx.phoneNumber??call.phoneNumber; call.routePoint=ctx.routePoint??call.routePoint; call.campaignPhoneNumber=ctx.routePoint??call.campaignPhoneNumber; call.taskNumber=ctx.taskNumber??call.taskNumber
     call.campaignId=line.match(/(?:campaignID|sysCampaignID)\s*[:,]\s*(?:value\s*:\s*)?(\d+)/i)?.[1]??call.campaignId
     call.transactionId=line.match(/call transaction ID\s*:\s*(\d+)/i)?.[1]??line.match(/sysTransactionID.*?value\s*:\s*(\d+)/i)?.[1]??call.transactionId
     call.callStatus=line.match(/callStatus\s*:\s*(\d+)/i)?.[1]??call.callStatus
