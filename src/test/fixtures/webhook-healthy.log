@@ -1,0 +1,14 @@
+sh-4.4$ sudo grep 6598175528 log.log.2026-08-10
+2026-08-10 10:37:26,639 INFO [MessageFlowProcessingThread-1] [TRX: 4125] start node is 532 platformConfig={"appid":"LTAI1234567890HEQX","apikey":"MwPc1234567890Wds","appsecret":"secretvalue1234"}
+2026-08-10 10:37:26,700 INFO [MessageFlowProcessingThread-1] [TRX: 4125] IVR_NODE_START NodeId: 532
+2026-08-10 10:37:27,044 INFO [MessageFlowProcessingThread-1] [TRX: 4125] Received ID: 39847, Message: hello my account is failing
+2026-08-10 10:37:27,071 INFO [MessageFlowProcessingThread-1] [TRX: 4125] Setting isBlackList as 0 for 6598175528
+2026-08-10 10:37:27,200 INFO [MessageFlowProcessingThread-1] [TRX: 4125] nodeid=532, retvalue=-1, nextnodeid=533 currentPromptTimeout=0 currentMaxTimeout=0 pendingInputOrTimeout=false numberTries: 0
+2026-08-10 10:37:27,249 INFO [MessageFlowProcessingThread-1] [TRX: 4125] IVR_NODE_NON_OPERATION NodeId: 533 isOperationHour: true isHoliday: false
+2026-08-10 10:37:27,260 INFO [MessageFlowProcessingThread-1] [TRX: 4125] MSGFLOW_NODE_PROMPT_SELECT NodeId: 538
+2026-08-10 10:37:45,765 INFO [MessageFlowProcessingThread-1] [TRX: 4125] Received ID: 39849, Message: General Enquiry
+2026-08-10 10:37:45,777 INFO [MessageFlowProcessingThread-1] [TRX: 4125] Valid selection (Label): General Enquiry
+2026-08-10 10:37:45,790 INFO [MessageFlowProcessingThread-1] [TRX: 4125] IVR_NODE_VARIABLE NodeId: 688
+2026-08-10 10:37:45,807 INFO [MessageFlowProcessingThread-1] [TRX: 4125] IVR_NODE_ROUTE NodeId: 544
+2026-08-10 10:37:45,819 INFO [MessageFlowProcessingThread-1] [TRX: 4125] Updating trx status to 0. Assigning agent group ID with 1
+2026-08-10 10:37:45,824 INFO [MessageFlowProcessingThread-1] [TRX: 4125] End node done/ Route Node
