@@ -1,6 +1,8 @@
-# SignalTrace V8 — Log, Voice & Network Analyzer
+# SignalTrace V9 — Log, Voice & Network Analyzer
 
-SignalTrace V8 is a browser-only troubleshooting view for exported OpsCentral SocketIO / EFV, Asterisk / FreePBX, Asterisk-IVR, PJSIP RTT / Reachability, and eFrontVoice `.log` and `.txt` files. The required log-type selection ensures that only the intended deterministic analyzer runs.
+V9 expands eFrontVoice-IVR into per-call production routing analysis. It correlates digit attempts, route-node and agent-lookup stages, booking, call-record creation, route completion, and disconnects; reports stage latency against configurable local thresholds; and keeps successful calls with recoverable delays or digit retries classified as successful with warnings. The IVR workflow accepts either `.log`/`.txt` uploads or pasted records and provides a call selector plus an expandable timestamped technical timeline.
+
+SignalTrace V9 is a browser-only troubleshooting view for exported OpsCentral SocketIO / EFV, Asterisk / FreePBX, Asterisk-IVR, PJSIP RTT / Reachability, and eFrontVoice `.log` and `.txt` files. The required log-type selection ensures that only the intended deterministic analyzer runs.
 
 ## Privacy and security model
 

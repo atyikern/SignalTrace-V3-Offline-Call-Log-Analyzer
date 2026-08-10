@@ -1,6 +1,7 @@
 import { useRef, useState, type ChangeEvent, type DragEvent } from 'react'
 import { AlertTriangle, ChevronDown, FileLock2, FileText, LockKeyhole, Radio, ShieldCheck, Upload } from 'lucide-react'
 import { analyzeLog, DEFAULT_GROUPING_WINDOW_MS } from './analyzer'
+import { DEFAULT_IVR_THRESHOLDS, type IvrThresholds } from './ivrAnalyzer'
 import type { AgentAnalysis, AnalysisResult, AsteriskIvrCall, ExtensionNetworkAnalysis, IvrCall, LogType, NetworkSeverity, VoiceCall, VoiceExtensionAnalysis, AgentRoutingAnalysis, WebhookStatus, WebhookTransaction } from './types'
 
 const ACCEPTED_EXTENSIONS = ['.log', '.txt']
@@ -21,7 +22,7 @@ const LOG_TYPES: Array<{ value: LogType; label: string }> = [
   { value: 'efrontvoice', label: 'eFrontVoice' },
 ]
 
-function EmptyState({ logType, file, onLogType, onUpload, onAnalyze }: { logType: LogType | ''; file?: File; onLogType: (type: LogType | '') => void; onUpload: () => void; onAnalyze: () => void }) {
+function EmptyState({ logType, file, pasted, onPaste, onLogType, onUpload, thresholds, onThresholds, onAnalyze }: { thresholds:IvrThresholds; onThresholds:(value:IvrThresholds)=>void; logType: LogType | ''; file?: File; pasted:string; onPaste:(value:string)=>void; onLogType: (type: LogType | '') => void; onUpload: () => void; onAnalyze: () => void }) {
   return <main className="empty-main">
     <section className="hero-simple">
       <span className="kicker"><span /> Local-first network diagnostics</span>
@@ -30,7 +31,7 @@ function EmptyState({ logType, file, onLogType, onUpload, onAnalyze }: { logType
       <div className="upload-workflow">
         <label className="agent-selector"><span>Log Type</span><div><select aria-label="Log Type" value={logType} onChange={(event) => onLogType(event.target.value as LogType | '')} required><option value="">Select log type</option>{LOG_TYPES.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}</select><ChevronDown size={16} /></div></label>
         <div><span className="upload-label">Upload Log</span><button className="file-button" onClick={onUpload}><FileText size={17} />{file?.name ?? 'Select log file'}</button></div>
-        <button className="primary-button" disabled={!logType || !file} onClick={onAnalyze}><Upload size={19} />Analyze</button>
+        {logType==='efrontvoice-ivr'&&<details className="threshold-settings"><summary>V9 routing thresholds</summary>{Object.entries(thresholds).map(([key,value])=><label key={key}>{key.replaceAll(/([A-Z])/g,' $1')} (ms)<input type="number" min="0" value={value} onChange={event=>onThresholds({...thresholds,[key]:Number(event.target.value)})}/></label>)}</details>}{logType==='efrontvoice-ivr'&&<label className="paste-log"><span className="upload-label">Or Paste Log</span><textarea aria-label="Paste Log" value={pasted} onChange={event=>onPaste(event.target.value)} placeholder="Paste eFrontVoice-IVR records here" /></label>}<button className="primary-button" disabled={!logType || (!file&&!pasted.trim())} onClick={onAnalyze}><Upload size={19} />Analyze</button>
       </div>
       <div className="format-note"><FileText size={16} /><span><strong>Supported Logs</strong><small>OpsCentral SocketIO / EFV<br />Asterisk / FreePBX<br />Asterisk-IVR<br />OpsCentral Webhook<br />PJSIP RTT / Reachability<br />eFrontVoice Call Routing / Agent<br />.log / .txt · Up to 50 MB</small></span></div>
     </section>
@@ -78,7 +79,8 @@ function ExtensionReport({ analysis }: { analysis: ExtensionNetworkAnalysis }) {
 const timeOnly = (value?: string) => value?.match(/\d{2}:\d{2}:\d{2}/)?.[0] ?? 'Unknown time'
 const voiceCallKey = (call: VoiceCall) => call.transactionId ? `tid:${call.transactionId}` : call.callId
 function IvrReport({ call }: { call: IvrCall }) {
-  return <article className="network-report ivr-report"><header className="report-header"><div><span className="kicker"><span /> eFrontVoice-IVR</span><h2>IVR Call Flow Analysis</h2></div></header><section className="metric-row"><div><span>IVR Status</span><b>{call.ivrStatus}</b></div><div><span>Routing Status</span><b>{call.routingStatus}</b></div><div><span>Collect Digits</span><b>{call.failedAttempts ? 'Failed' : call.successfulAttempts ? 'Successful' : 'Not Detected'}</b></div><div><span>Digit Attempts</span><b>{call.collectDigitAttempts}</b></div><div><span>Failed Attempts</span><b>{call.failedAttempts}</b></div><div><span>Digits Received</span><b>{call.successfulAttempts ? call.events.filter((event) => event.type === 'DIGIT_COLLECTED').map((event) => event.digit).join(', ') : 'None'}</b></div></section><section className="metric-row"><div><span>Call ID</span><b>{call.callId}</b></div><div><span>Campaign Phone Number</span><b>{call.campaignPhoneNumber ?? call.routePoint ?? '—'}</b></div><div><span>Campaign ID</span><b>{call.campaignId ?? '—'}</b></div><div><span>Transaction ID</span><b>{call.transactionId ?? '—'}</b></div></section><section className="problem-section"><div className="problem-heading"><div><span className="section-label">Call Flow</span><h2>Diagnostic timeline</h2></div></div><div className="problem-list">{call.events.map((event) => <div className="problem-time" key={`${event.lineNumber}:${event.type}`}><time>{timeOnly(event.timestamp)}</time><div><span className="indicator"><i />{event.label}{event.errorCode ? ` · Error ${event.errorCode}` : ''}{event.digit === 'null' ? ' · No digit collected' : ''}</span></div></div>)}</div></section><div className="summary-sections"><section><span className="section-label">Finding</span><p>{call.finding}</p></section><section><span className="section-label">Possible Cause</span><p>{call.possibleCause}</p></section><section><span className="section-label">Possible Impact</span><p>{call.possibleImpact}</p></section><section className="conclusion"><span className="section-label">Conclusion</span><p>{call.conclusion}</p></section></div></article>
+  const duration=(value?:number)=>value===undefined?'—':value<1000?`${value} ms`:`${(value/1000).toFixed(2)} sec`
+  return <article className="network-report ivr-report v9-ivr"><header className="report-header"><div><span className="kicker"><span /> eFrontVoice-IVR · V9</span><h2>IVR Call Flow Analysis</h2></div></header><section className="ivr-outcome"><span>Final Outcome</span><strong>{call.outcome}</strong><p>Caller {call.phoneNumber} · Agent {call.selectedAgentId??'Not selected'} · Extension {call.selectedExtension??'Not selected'}</p>{call.warnings.length>0&&<ul>{call.warnings.map(item=><li key={item}>{item}</li>)}</ul>}</section><section className="metric-row"><div><span>IVR Status</span><b>{call.ivrStatus}</b></div><div><span>Call ID</span><b>{call.callId}</b></div><div><span>Transaction ID</span><b>{call.transactionId??'—'}</b></div><div><span>Campaign Phone Number</span><b>{call.campaignPhoneNumber??call.routePoint??'—'}</b></div><div><span>Routes / Total</span><b>{call.numberOfRoutes??'—'} / {call.totalRoutes??'—'}</b></div><div><span>Booking Result</span><b>{call.bookingResult??'—'}</b></div><div><span>Digit Attempts</span><b>{call.collectDigitAttempts}</b></div></section><section className="metric-row timing-metrics"><div><span>Routing Queue</span><b>{duration(call.timings.routingQueueMs)}</b></div><div><span>Agent Lookup</span><b>{duration(call.timings.agentLookupMs)}</b></div><div><span>Add Call Record</span><b>{duration(call.timings.addCallRecordMs)}</b></div><div><span>Route Completion</span><b>{duration(call.timings.routeCallMs)}</b></div><div><span>Configured Timeout</span><b>{duration(call.timings.configuredRouteTimeoutMs)}</b></div></section><details className="technical-timeline"><summary>Technical timeline ({call.events.length} matched records)</summary><div className="problem-list">{call.events.map(event=><div className="problem-time" key={`${event.lineNumber}:${event.type}`}><time>{timeOnly(event.timestamp)}</time><div><span className="indicator"><i />{event.label}{event.errorCode?` · Error ${event.errorCode}`:''}{event.digit==='null'?' · No digit collected':''}</span><code>{event.rawLine}</code></div></div>)}</div></details><div className="summary-sections"><section><span className="section-label">Finding</span><p>{call.finding}</p></section><section><span className="section-label">Possible Impact</span><p>{call.possibleImpact}</p></section><section className="conclusion"><span className="section-label">Conclusion</span><p>{call.conclusion}</p></section></div></article>
 }
 
 
@@ -148,6 +150,8 @@ export default function App() {
   const [selectedWebhookTransaction,setSelectedWebhookTransaction]=useState<string>()
   const [error, setError] = useState<string>()
   const [dragging, setDragging] = useState(false)
+  const [pastedLog,setPastedLog]=useState('')
+  const [ivrThresholds,setIvrThresholds]=useState<IvrThresholds>(()=>{try{return {...DEFAULT_IVR_THRESHOLDS,...JSON.parse(localStorage.getItem('signaltrace-v9-thresholds')??'{}')}}catch{return DEFAULT_IVR_THRESHOLDS}})
 
   const clearAnalysis = () => {
     setResult(undefined); setSelectedAgent(undefined); setSelectedExtension(undefined)
@@ -163,13 +167,10 @@ export default function App() {
     setUploadedFile(file)
   }
   const analyze = () => {
-    if (!uploadedFile || !selectedLogType) return
+    if ((!uploadedFile && !pastedLog.trim()) || !selectedLogType) return
     clearAnalysis()
-    const reader = new FileReader()
-    reader.onerror = () => setError('The browser could not read this file. No data was uploaded.')
-    reader.onload = () => {
-      if (typeof reader.result !== 'string') return setError('The selected file could not be read as text.')
-      const analysis = analyzeLog(reader.result, uploadedFile.name, DEFAULT_GROUPING_WINDOW_MS, selectedLogType)
+    const applyAnalysis = (contents:string,name:string) => {
+      const analysis = analyzeLog(contents, name, DEFAULT_GROUPING_WINDOW_MS, selectedLogType, ivrThresholds)
       setResult(analysis)
       setSelectedAgent(analysis.agents[0]?.key)
       setSelectedExtension(orderExtensionsForDiagnosis(analysis.extensions)[0]?.extension)
@@ -183,18 +184,22 @@ export default function App() {
       setSelectedAsteriskIvrCall(analysis.asteriskIvrCalls[0]?.key)
       setSelectedWebhookTransaction(analysis.webhookTransactions[0]?.trxId)
     }
+    if (!uploadedFile) { applyAnalysis(pastedLog, 'Pasted eFrontVoice-IVR log'); return }
+    const reader = new FileReader()
+    reader.onerror = () => setError('The browser could not read this file. No data was uploaded.')
+    reader.onload = () => typeof reader.result === 'string' ? applyAnalysis(reader.result, uploadedFile.name) : setError('The selected file could not be read as text.')
     reader.readAsText(uploadedFile)
   }
   const onInput = (event: ChangeEvent<HTMLInputElement>) => { selectFile(event.target.files?.[0]); event.target.value = '' }
   const onDrop = (event: DragEvent) => { event.preventDefault(); setDragging(false); selectFile(event.dataTransfer.files[0]) }
   const changeLogType = (type: LogType | '') => { clearAnalysis(); setSelectedLogType(type) }
-  const reset = () => { clearAnalysis(); setUploadedFile(undefined); setSelectedLogType(''); setError(undefined) }
+  const reset = () => { clearAnalysis(); setUploadedFile(undefined); setPastedLog(''); setSelectedLogType(''); setError(undefined) }
 
   return <div className="app" onDragOver={(event) => { event.preventDefault(); setDragging(true) }} onDragLeave={() => setDragging(false)} onDrop={onDrop}>
-    <header className="app-header"><button className="brand" onClick={reset} aria-label="SignalTrace home"><span className="brand-mark"><i /><i /><i /></span><span><strong>SignalTrace <b>V8</b></strong><small>Log, Voice &amp; Network Analyzer</small></span></button><div className="offline-badge"><span /> Offline mode</div></header>
+    <header className="app-header"><button className="brand" onClick={reset} aria-label="SignalTrace home"><span className="brand-mark"><i /><i /><i /></span><span><strong>SignalTrace <b>V9</b></strong><small>Log, Voice &amp; Network Analyzer</small></span></button><div className="offline-badge"><span /> Offline mode</div></header>
     <input ref={inputRef} className="visually-hidden" type="file" accept=".log,.txt,text/plain" onChange={onInput} aria-label="Choose log" />
     {error && <div className="error-banner" role="alert"><AlertTriangle size={18} />{error}<button onClick={() => setError(undefined)}>Dismiss</button></div>}
-    {result ? <Results result={result} selectedAgent={result.agents.find((agent) => agent.key === selectedAgent)} selectedExtension={result.extensions.find((extension) => extension.extension === selectedExtension)} selectedPhoneNumber={selectedPhoneNumber} selectedIvrCall={result.ivrCalls.find((call) => call.callId === selectedIvrCallId)} selectedVoiceCallerId={selectedVoiceCallerId} selectedVoiceCall={result.voiceCalls.find(call=>voiceCallKey(call)===selectedVoiceCall)} selectedVoiceExtension={result.voiceExtensions.find(item=>item.extension===selectedVoiceExtension)} selectedAsteriskIvrCall={result.asteriskIvrCalls.find(call=>call.key===selectedAsteriskIvrCall)} selectedWebhookTransaction={result.webhookTransactions.find(item=>item.trxId===selectedWebhookTransaction)} onSelectAgent={setSelectedAgent} onSelectExtension={setSelectedExtension} onSelectPhoneNumber={(phone) => { setSelectedPhoneNumber(phone); setSelectedIvrCallId(result.ivrCalls.filter((call) => call.phoneNumber === phone).sort((a, b) => b.problemScore - a.problemScore || (b.startTime ?? "").localeCompare(a.startTime ?? ""))[0]?.callId) }} onSelectIvrCall={setSelectedIvrCallId} onSelectVoiceCallerId={(id)=>{setSelectedVoiceCallerId(id);setSelectedVoiceCall(result.voiceCalls.filter(call=>call.callerId===id).sort((a,b)=>b.problemScore-a.problemScore).map(voiceCallKey)[0])}} onSelectVoiceCall={setSelectedVoiceCall} onSelectVoiceExtension={setSelectedVoiceExtension} onSelectAsteriskIvrCall={setSelectedAsteriskIvrCall} onSelectWebhookTransaction={setSelectedWebhookTransaction} onReset={reset} /> : <EmptyState logType={selectedLogType} file={uploadedFile} onLogType={changeLogType} onUpload={() => inputRef.current?.click()} onAnalyze={analyze} />}
+    {result ? <Results result={result} selectedAgent={result.agents.find((agent) => agent.key === selectedAgent)} selectedExtension={result.extensions.find((extension) => extension.extension === selectedExtension)} selectedPhoneNumber={selectedPhoneNumber} selectedIvrCall={result.ivrCalls.find((call) => call.callId === selectedIvrCallId)} selectedVoiceCallerId={selectedVoiceCallerId} selectedVoiceCall={result.voiceCalls.find(call=>voiceCallKey(call)===selectedVoiceCall)} selectedVoiceExtension={result.voiceExtensions.find(item=>item.extension===selectedVoiceExtension)} selectedAsteriskIvrCall={result.asteriskIvrCalls.find(call=>call.key===selectedAsteriskIvrCall)} selectedWebhookTransaction={result.webhookTransactions.find(item=>item.trxId===selectedWebhookTransaction)} onSelectAgent={setSelectedAgent} onSelectExtension={setSelectedExtension} onSelectPhoneNumber={(phone) => { setSelectedPhoneNumber(phone); setSelectedIvrCallId(result.ivrCalls.filter((call) => call.phoneNumber === phone).sort((a, b) => b.problemScore - a.problemScore || (b.startTime ?? "").localeCompare(a.startTime ?? ""))[0]?.callId) }} onSelectIvrCall={setSelectedIvrCallId} onSelectVoiceCallerId={(id)=>{setSelectedVoiceCallerId(id);setSelectedVoiceCall(result.voiceCalls.filter(call=>call.callerId===id).sort((a,b)=>b.problemScore-a.problemScore).map(voiceCallKey)[0])}} onSelectVoiceCall={setSelectedVoiceCall} onSelectVoiceExtension={setSelectedVoiceExtension} onSelectAsteriskIvrCall={setSelectedAsteriskIvrCall} onSelectWebhookTransaction={setSelectedWebhookTransaction} onReset={reset} /> : <EmptyState thresholds={ivrThresholds} onThresholds={(value)=>{setIvrThresholds(value);localStorage.setItem('signaltrace-v9-thresholds',JSON.stringify(value))}} logType={selectedLogType} file={uploadedFile} pasted={pastedLog} onPaste={(value)=>{setPastedLog(value);if(value)setUploadedFile(undefined)}} onLogType={changeLogType} onUpload={() => inputRef.current?.click()} onAnalyze={analyze} />}
     {!result && <footer><p>Offline analysis only. SignalTrace analyzes the uploaded log and does not connect to your PBX server.</p><p>Uploaded logs are processed locally and are not permanently stored.</p></footer>}
     {dragging && <div className="drop-overlay"><Upload size={36} /><strong>Drop PBX log to analyze locally</strong></div>}
   </div>

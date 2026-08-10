@@ -1,6 +1,6 @@
 import type { AgentAnalysis, AnalysisResult, LogType, NetworkIndicator, NetworkSeverity, ProblemTime, SourceReference } from './types'
 import { analyzePjsipNetworks, normalizeLogRecords, parseTimestamp } from './pjsipAnalyzer'
-import { analyzeIvrCalls } from './ivrAnalyzer'
+import { analyzeIvrCalls, type IvrThresholds } from './ivrAnalyzer'
 import { analyzeWebhook } from './webhookAnalyzer'
 import { analyzeAsteriskIvr } from './asteriskIvrAnalyzer'
 import { analyzeVoiceCalls, analyzeVoiceExtensions, normalizeEfrontVoiceRecords } from './voiceAnalyzer'
@@ -140,14 +140,14 @@ function summarize(metadata: AgentMetadata, problems: ProblemTime[]): AgentAnaly
   }
 }
 
-export function analyzeLog(contents: string, fileName = 'PBX log', groupingWindowMs = DEFAULT_GROUPING_WINDOW_MS, logType?: LogType): AnalysisResult {
+export function analyzeLog(contents: string, fileName = 'PBX log', groupingWindowMs = DEFAULT_GROUPING_WINDOW_MS, logType?: LogType, ivrThresholds?: IvrThresholds): AnalysisResult {
   const physicalLines = normalizeLogRecords(contents)
   const voiceRecords = normalizeEfrontVoiceRecords(contents)
   const empty = { fileName, logType, totalLines: voiceRecords.length, ignoredLines: 0, agents: [], extensions: [], ivrCalls: [], voiceCalls: [], voiceExtensions: [], asteriskIvrCalls: [], webhookTransactions: [] }
   if (logType === 'opscentral-webhook') return { ...empty, webhookTransactions: analyzeWebhook(contents) }
   if (logType === 'asterisk-ivr') return { ...empty, asteriskIvrCalls: analyzeAsteriskIvr(contents) }
   if (logType === 'pjsip-rtt') return { ...empty, extensions: analyzePjsipNetworks(physicalLines) }
-  if (logType === 'efrontvoice-ivr') return { ...empty, ivrCalls: analyzeIvrCalls(physicalLines) }
+  if (logType === 'efrontvoice-ivr') return { ...empty, ivrCalls: analyzeIvrCalls(physicalLines, ivrThresholds) }
   if (logType === 'efrontvoice') return { ...empty, voiceCalls: analyzeVoiceCalls(voiceRecords), voiceExtensions: analyzeVoiceExtensions(voiceRecords) }
   const agents = new Map<string, { metadata: AgentMetadata; problems: DetectedProblem[] }>()
   const sessionAgents = new Map<string, string | undefined>()

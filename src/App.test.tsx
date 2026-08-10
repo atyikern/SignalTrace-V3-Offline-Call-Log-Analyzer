@@ -70,7 +70,7 @@ describe('App', () => {
 
   it('advertises OpsCentral SocketIO / EFV and Asterisk / FreePBX support', () => {
     render(<App />)
-    expect(screen.getByRole('button', { name: 'SignalTrace home' })).toHaveTextContent('SignalTrace V8')
+    expect(screen.getByRole('button', { name: 'SignalTrace home' })).toHaveTextContent('SignalTrace V9')
     expect(screen.getByText('Log, Voice & Network Analyzer')).toBeInTheDocument()
     expect(screen.getByText('Supported Logs')).toBeInTheDocument()
     const supportedLogs = screen.getByText('Supported Logs').parentElement!
