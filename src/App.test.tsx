@@ -198,20 +198,21 @@ describe('App', () => {
     expect(screen.getByText('11 sec')).toBeInTheDocument()
   })
 
-  it('renders the masked OpsCentral Webhook messaging-flow report and filters internally', async () => {
+  it('renders the OpsCentral Webhook messaging-flow report and filters internally', async () => {
     const user=userEvent.setup();render(<App />)
     await uploadAndAnalyze(user,webhookFixture,'webhook.log','opscentral-webhook')
     expect(await screen.findByText('Messaging Flow')).toBeInTheDocument()
-    expect(screen.getByText('TRX 4125 — 6598****28 — 10:37:26 — Successfully Routed')).toBeInTheDocument()
+    expect(screen.getByText('TRX 4125 — 6598175528 — 10:37:26 — Successfully Routed')).toBeInTheDocument()
     expect(screen.getAllByText('Successfully Routed').length).toBeGreaterThan(0)
     expect(screen.getByText('19.2 sec')).toBeInTheDocument()
-    const journey=screen.getByText('Flow Journey').parentElement!
+    expect(screen.queryByText(/10:37:26,639/)).not.toBeInTheDocument()
+    const journey=screen.getByText('Message Node Flow ID').parentElement!
     expect(within(journey).getByText('532').parentElement).toHaveTextContent('Start')
     expect(within(journey).getByText('544').parentElement).toHaveTextContent('Route to Agent Group')
-    expect(document.body).not.toHaveTextContent('6598175528')
+    expect(document.body).toHaveTextContent('6598175528')
     expect(document.body).not.toHaveTextContent('hello my account is failing')
     await user.type(screen.getByLabelText('Search'),'6598175528')
-    expect(screen.getByText('TRX 4125 — 6598****28 — 10:37:26 — Successfully Routed')).toBeInTheDocument()
+    expect(screen.getByText('TRX 4125 — 6598175528 — 10:37:26 — Successfully Routed')).toBeInTheDocument()
   })
 
 })

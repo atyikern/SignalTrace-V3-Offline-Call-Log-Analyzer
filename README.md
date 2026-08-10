@@ -140,4 +140,4 @@ V7 adds an explicit **Asterisk-IVR** log type. Calls are conservatively isolated
 
 ### OpsCentral Webhook messaging flow
 
-V8 adds an explicit **OpsCentral Webhook** analyzer for locally uploaded messaging-flow logs. Transactions are isolated by `[TRX: …]`, joined timestamp records are normalized, node journeys and confirmed routing outcomes are reconstructed, and customer numbers, message content, credentials, tokens, authorization data, and passwords are masked in every visible, copied, or exported record. Successful routing confirms assignment to an Agent group only; it does not claim Agent acceptance or reply.
+V8 adds an explicit **OpsCentral Webhook** analyzer for locally uploaded messaging-flow logs. Transactions are isolated by `[TRX: …]`, joined timestamp records are normalized, node journeys and confirmed routing outcomes are reconstructed, and message content, credentials, tokens, authorization data, and passwords are masked in every visible, copied, or exported record. Customer numbers remain fully visible for support correlation. Successful routing confirms assignment to an Agent group only; it does not claim Agent acceptance or reply.
