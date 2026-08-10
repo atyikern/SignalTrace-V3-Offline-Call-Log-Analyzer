@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import App from './App'
@@ -66,18 +66,23 @@ describe('App', () => {
     const user = userEvent.setup({ applyAccept: false })
     render(<App />)
     await user.upload(screen.getByLabelText('Choose log'), new File(['data'], 'network.csv', { type: 'text/csv' }))
-    expect(screen.getByRole('alert')).toHaveTextContent('Choose a supported OpsCentral or PBX .log or .txt file.')
+    expect(screen.getByRole('alert')).toHaveTextContent('Choose a supported .log or .txt file for a Voice, Messaging, or Connectivity analyzer.')
   })
 
-  it('advertises OpsCentral SocketIO / EFV and Asterisk / FreePBX support', () => {
+  it('presents the V10.6 operational scope and categorized log types', () => {
     render(<App />)
-    expect(screen.getByRole('button', { name: 'SignalTrace home' })).toHaveTextContent('SignalTrace V10')
-    expect(screen.getByText('Log, Voice & Network Analyzer')).toBeInTheDocument()
-    expect(screen.getByText('Supported Logs')).toBeInTheDocument()
-    const supportedLogs = screen.getByText('Supported Logs').parentElement!
-    expect(supportedLogs).toHaveTextContent('OpsCentral SocketIO / EFV')
-    expect(supportedLogs).toHaveTextContent('Asterisk / FreePBX')
-    expect(supportedLogs).toHaveTextContent('PJSIP RTT / Reachability')
+    expect(screen.getByRole('button', { name: 'SignalTrace home' })).toHaveTextContent('SignalTrace V10.6')
+    expect(screen.getByText('Voice, Messaging & Connectivity Analyzer')).toBeInTheDocument()
+    expect(screen.getByRole('heading',{level:1})).toHaveTextContent('Diagnose voice, messaging, and connectivity issues faster.')
+    expect(screen.queryByText('Supported Logs')).not.toBeInTheDocument()
+    expect(screen.getByText('Voice diagnostics')).toBeInTheDocument()
+    expect(screen.getByText('Messaging diagnostics')).toBeInTheDocument()
+    expect(screen.getByText('Connectivity diagnostics')).toBeInTheDocument()
+    const select=screen.getByLabelText('Log Type')
+    const groups=[...select.querySelectorAll('optgroup')]
+    expect(groups.map(group=>group.label)).toEqual(['Voice','Messaging','Connectivity','Others'])
+    expect(groups.flatMap(group=>[...group.querySelectorAll('option')].map(option=>option.textContent))).toEqual(['eFrontVoice','eFrontVoice-IVR','Asterisk-IVR','Webhook','OCOD5 WhatsApp','SocketIO / ECONNRESET','RTT / UNREACHABLE','UI'])
+    expect(within(select).getByRole('option',{name:'UI'})).toBeDisabled();fireEvent.change(select,{target:{value:'ui'}});expect(select).toHaveValue('');expect(screen.getByRole('button',{name:'Analyze'})).toBeDisabled()
   })
 
   it('automatically renders an Extension reachability report without an Agent', async () => {

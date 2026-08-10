@@ -1,8 +1,8 @@
-# SignalTrace V10 — Log, Voice & Network Analyzer
+# SignalTrace V10.6 — Voice, Messaging & Connectivity Analyzer
 
 V9 expands eFrontVoice-IVR into per-call production routing analysis. It correlates digit attempts, route-node and agent-lookup stages, booking, call-record creation, route completion, and disconnects; reports stage latency against configurable local thresholds; and keeps successful calls with recoverable delays or digit retries classified as successful with warnings. The IVR workflow accepts either `.log`/`.txt` uploads or pasted records and provides a call selector plus an expandable timestamped technical timeline.
 
-SignalTrace V10 is a browser-only troubleshooting view for exported OpsCentral SocketIO / EFV, Asterisk / FreePBX, Asterisk-IVR, PJSIP RTT / Reachability, and eFrontVoice `.log` and `.txt` files. The required log-type selection ensures that only the intended deterministic analyzer runs.
+SignalTrace V10.6 is a browser-only troubleshooting view for exported SocketIO / ECONNRESET, Asterisk / FreePBX, Asterisk-IVR, RTT / UNREACHABLE, and eFrontVoice `.log` and `.txt` files. The required log-type selection ensures that only the intended deterministic analyzer runs.
 
 The **OCOD5 WhatsApp Messaging** analyzer correlates outbound provider submissions and webhook callbacks by Message/Task ID, retains Conversation IDs, identifies inbound replies, reports Sent → Delivered → Read timing, and treats repeated callbacks as duplicates rather than failures. Friendly summaries show complete customer and business routing numbers while keeping message bodies out of the summary; matched raw records remain available only in the local expandable technical timeline. Send, delivery, and informational read thresholds are configurable in the upload workflow.
 
@@ -136,15 +136,15 @@ Extension analysis recognizes login, SIP/WebRTC registration, monitoring, explic
 
 ### Explicit log-type selection
 
-Before reading a file, SignalTrace requires the support engineer to select **SocketIO / EFV**, **PJSIP RTT / Reachability**, **Asterisk-IVR**, **OpsCentral Webhook**, **eFrontVoice-IVR**, or **eFrontVoice**. The Analyze action remains disabled until both a type and local file are selected. Only the selected parser executes, so normal eFrontVoice messages such as `IvrClientHandler` or `100|IVR|` cannot create an IVR report. Selecting a replacement file and using **New log** clear all prior results and entity selections.
+Before reading a file, SignalTrace groups log types into **Voice** (eFrontVoice, eFrontVoice-IVR, Asterisk-IVR), **Messaging** (Webhook, OCOD5 WhatsApp), and **Connectivity** (SocketIO / ECONNRESET, RTT / UNREACHABLE). The **Others → UI** entry is visible but disabled and cannot run an analyzer. The Analyze action remains disabled until both a type and local file are selected. Only the selected parser executes, so normal eFrontVoice messages such as `IvrClientHandler` or `100|IVR|` cannot create an IVR report. Selecting a replacement file and using **New log** clear all prior results and entity selections.
 
 ### Asterisk-IVR call routing
 
 V7 adds an explicit **Asterisk-IVR** log type. Calls are conservatively isolated by Process ID, linked ID, unique ID, and only then Caller ID/time fallback. The report distinguishes answered or normally transferred calls from `BUSY`, `CHANUNAVAIL`, `NOANSWER`, and incomplete routing, includes a selected-call evidence timeline and ring duration, and recommends status-specific checks without executing commands. `NORMACAUSE` alone is never treated as proof of answer.
 
-### OpsCentral Webhook messaging flow
+### Webhook messaging flow
 
-V8 adds an explicit **OpsCentral Webhook** analyzer for locally uploaded messaging-flow logs. Transactions are isolated by `[TRX: …]`, joined timestamp records are normalized, node journeys and confirmed routing outcomes are reconstructed, and message content, credentials, tokens, authorization data, and passwords are masked in every visible, copied, or exported record. Customer numbers remain fully visible for support correlation. Successful routing confirms assignment to an Agent group only; it does not claim Agent acceptance or reply.
+V8 adds an explicit **Webhook** analyzer for locally uploaded messaging-flow logs. Transactions are isolated by `[TRX: …]`, joined timestamp records are normalized, node journeys and confirmed routing outcomes are reconstructed, and message content, credentials, tokens, authorization data, and passwords are masked in every visible, copied, or exported record. Customer numbers remain fully visible for support correlation. Successful routing confirms assignment to an Agent group only; it does not claim Agent acceptance or reply.
 
 #### CallFront Agent routing
 
