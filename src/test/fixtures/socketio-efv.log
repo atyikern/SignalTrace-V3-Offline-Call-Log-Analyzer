@@ -1,0 +1,11 @@
+2026-04-03 09:49:23 - info: [io: sessionAAA <<== efv: undefined ] [ kumaresan ] EFV ERROR : Error: read ECONNRESET
+2026-04-03 09:49:23 - info: [io: sessionAAA <<== efv: undefined ] [ kumaresan ] EFV DESTROY : Error: read ECONNRESET
+2026-04-03 10:43:35 - info: [io: sessionBBB <<== efv: undefined ] [ kumaresan ] EFV ERROR : Error: read ECONNRESET
+2026-04-03 10:43:35 - info: [io: sessionBBB <<== efv: undefined ] [ kumaresan ] EFV DESTROY : Error: read ECONNRESET
+2026-04-03 13:35:42 - info: [io: sessionCCC <<== efv: undefined ] [ Paul Arshan ] EFV ERROR : Error: read ECONNRESET
+2026-04-03 13:35:42 - info: [io: sessionCCC <<== efv: undefined ] [ Paul Arshan ] EFV DESTROY : Error: read ECONNRESET
+2026-04-03 07:07:48 - info: [io: sessionDDD <<== efv: undefined ] [ Zuhair ] EFV ERROR : Error: read ECONNRESET
+2026-04-03 07:07:48 - info: [io: sessionDDD <<== efv: undefined ] [ Zuhair ] EFV DESTROY : Error: read ECONNRESET
+2026-04-03 14:51:49 - info: [io: sessionEEE <<== efv: undefined ] [ undefined ] EFV ERROR : Error: read ECONNRESET
+2026-04-03 14:51:49 - info: [io: sessionEEE <<== efv: undefined ] [ kumaresan ] EFV DESTROY : Error: read ECONNRESET
+2026-04-03 16:00:00 - info: [io: orphanSession <<== efv: undefined ] [ undefined ] EFV DESTROY : Error: read ECONNRESET
