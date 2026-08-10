@@ -6,6 +6,7 @@ import webhookFixture from './test/fixtures/webhook-healthy.log?raw'
 import asteriskIvrFixture from './test/fixtures/asterisk-ivr.log?raw'
 import voiceFixture from './test/fixtures/voice-routing.log?raw'
 import ivrFixture from './test/fixtures/ivr-call-flow.log?raw'
+import whatsappFixture from './test/fixtures/ocod5-whatsapp.log?raw'
 
 const log = `Agent: kumaresan Agent ID: 604 Extension: 8041
 [2026-03-14 14:51:49] ECONNRESET EFV DESTROY
@@ -14,7 +15,7 @@ Agent: amina Agent ID: 605 Extension: 8042
 [2026-03-14 11:02:01] Broken pipe`
 
 
-async function uploadAndAnalyze(user: ReturnType<typeof userEvent.setup>, contents: string, name: string, type: 'socketio-efv'|'pjsip-rtt'|'efrontvoice-ivr'|'efrontvoice'|'asterisk-ivr'|'opscentral-webhook') {
+async function uploadAndAnalyze(user: ReturnType<typeof userEvent.setup>, contents: string, name: string, type: 'socketio-efv'|'pjsip-rtt'|'efrontvoice-ivr'|'efrontvoice'|'asterisk-ivr'|'opscentral-webhook'|'ocod5-whatsapp') {
   await user.selectOptions(screen.getByLabelText('Log Type'), type)
   await user.upload(screen.getByLabelText('Choose log'), new File([contents], name, { type: 'text/plain' }))
   await user.click(screen.getByRole('button', { name: 'Analyze' }))
@@ -246,5 +247,7 @@ describe('App', () => {
     expect(within(selector).getAllByRole('option').map(option=>option.textContent)).toEqual(['TID 8169653','TID 8170813'])
     expect(screen.getByText('8169653')).toBeInTheDocument()
   })
+
+  it('renders OCOD5 WhatsApp message selection and successful progression',async()=>{const user=userEvent.setup();render(<App/>);await uploadAndAnalyze(user,whatsappFixture,'whatsapp.log','ocod5-whatsapp');expect(await screen.findByText('Message delivery analysis')).toBeInTheDocument();expect(screen.getByLabelText('Selected WhatsApp Message')).toBeInTheDocument();expect(screen.getByText('Delivered and read')).toBeInTheDocument();expect(screen.getByText('Sent → Delivered → Read')).toBeInTheDocument();expect(screen.getByText('1')).toBeInTheDocument();expect(screen.queryByText('6598175528')).not.toBeInTheDocument()})
 
 })

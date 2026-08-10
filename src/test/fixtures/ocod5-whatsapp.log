@@ -1,0 +1,7 @@
+2026-08-10 10:00:00,000 INFO [WhatsAppSendingThread] Preparing send campaignId=20 trxId=4125 MessageId=msg-100 TaskId=task-100 ConversationId=conv-1 from=60111111111 to=6598175528 Message: hello
+2026-08-10 10:00:00,100 INFO [AliCloud] Sending WA message campaignId=20 trxId=4125 MessageId=msg-100 TaskId=task-100 ConversationId=conv-1 from=60111111111 to=6598175528
+2026-08-10 10:00:00,500 INFO WhatsAppWebhook {"MessageId":"msg-100","TaskId":"task-100","ConversationId":"conv-1","Status":"Sent","Timestamp":1786356000300,"WabaId":"waba-1","UserId":"user-1"}
+2026-08-10 10:00:01,500 INFO WhatsAppWebhook {"MessageId":"msg-100","TaskId":"task-100","ConversationId":"conv-1","Status":"Delivered","Timestamp":1786356001300}
+2026-08-10 10:00:01,600 INFO WhatsAppWebhook {"MessageId":"msg-100","TaskId":"task-100","ConversationId":"conv-1","Status":"Delivered","Timestamp":1786356001300}
+2026-08-10 10:00:03,500 INFO WhatsAppWebhook {"MessageId":"msg-100","TaskId":"task-100","ConversationId":"conv-1","Status":"Read","Timestamp":1786356003300}
+2026-08-10 10:01:00,000 INFO WhatsAppWebhook {"MessageId":"msg-in-1","ConversationId":"conv-1","NoticeType":"inbound","From":"6598175528","To":"60111111111","MessageType":"text","Message":"customer reply","ContextMessageId":"msg-100"}

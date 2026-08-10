@@ -1,5 +1,5 @@
 export type NetworkSeverity = 'critical' | 'important' | 'media-quality'
-export type LogType = 'socketio-efv' | 'pjsip-rtt' | 'efrontvoice-ivr' | 'efrontvoice' | 'asterisk-ivr' | 'opscentral-webhook'
+export type LogType = 'socketio-efv' | 'pjsip-rtt' | 'efrontvoice-ivr' | 'efrontvoice' | 'asterisk-ivr' | 'opscentral-webhook' | 'ocod5-whatsapp'
 
 /** Retained internally for diagnostics and tests; never rendered in the normal UI. */
 export interface SourceReference {
@@ -44,6 +44,7 @@ export interface AnalysisResult {
   voiceExtensions: VoiceExtensionAnalysis[]
   asteriskIvrCalls: AsteriskIvrCall[]
   webhookTransactions: WebhookTransaction[]
+  whatsappMessages: WhatsappMessageAnalysis[]
 }
 
 
@@ -117,3 +118,8 @@ export type WebhookStatus = 'Successfully Routed'|'Blacklisted'|'Outside Operati
 export interface WebhookEvidence { timestamp?:string; timestampMs?:number; lineNumber:number; label:string; maskedRecord:string }
 export interface WebhookNode { id:string; type:string }
 export interface WebhookTransaction { trxId:string; customerNumber?:string; maskedCustomer:string; startTimestamp?:string; endTimestamp?:string; processingDurationMs?:number; threadName?:string; startNode?:string; currentNode?:string; nextNode?:string; nodeJourney:WebhookNode[]; messageIds:string[]; selectedOption?:string; blacklistResult?:'Passed'|'Blocked'; holidayResult?:boolean; operationHours?:'Open'|'Closed'; routeNode?:string; transactionStatus?:string; agentGroupId?:string; timeoutIndicators:string[]; errors:string[]; status:WebhookStatus; evidence:WebhookEvidence[]; finding:string; importantNote?:string; recommendations:string[]; problemScore:number; agentRouting?:AgentRoutingAnalysis }
+
+export type WhatsappStatus='Delivered and read'|'Delivered, awaiting read'|'Sent, awaiting delivery'|'Inbound message received'|'Send/delivery failed'|'Pending / incomplete evidence'
+export interface WhatsappEvidence { timestamp?:string; timestampMs?:number; providerTimestampMs?:number; lineNumber:number; type:'SEND_ATTEMPT'|'PROVIDER_SUBMISSION'|'SENT'|'DELIVERED'|'READ'|'INBOUND'|'FAILURE'; label:string; rawLine:string; duplicate?:boolean }
+export interface WhatsappTimings { sendToSentMs?:number; sentToDeliveredMs?:number; deliveredToReadMs?:number; inboundToResponseMs?:number; webhookLagMs?:number }
+export interface WhatsappMessageAnalysis { key:string; conversationId?:string; messageId?:string; taskId?:string; transactionId?:string; campaignId?:string; customerNumber?:string; maskedCustomer:string; businessNumber?:string; maskedBusiness:string; wabaId?:string; userId?:string; direction:'Inbound'|'Outbound'|'Unknown'; messageType?:string; conversationType?:string; contextualReplyId?:string; status:WhatsappStatus; statusProgression:string[]; duplicateCallbacks:number; warnings:string[]; errors:string[]; timings:WhatsappTimings; events:WhatsappEvidence[]; finding:string; problemScore:number }
