@@ -1,6 +1,6 @@
-# SignalTrace V7 — Log, Voice & Network Analyzer
+# SignalTrace V8 — Log, Voice & Network Analyzer
 
-SignalTrace V7 is a browser-only troubleshooting view for exported OpsCentral SocketIO / EFV, Asterisk / FreePBX, Asterisk-IVR, PJSIP RTT / Reachability, and eFrontVoice `.log` and `.txt` files. The required log-type selection ensures that only the intended deterministic analyzer runs.
+SignalTrace V8 is a browser-only troubleshooting view for exported OpsCentral SocketIO / EFV, Asterisk / FreePBX, Asterisk-IVR, PJSIP RTT / Reachability, and eFrontVoice `.log` and `.txt` files. The required log-type selection ensures that only the intended deterministic analyzer runs.
 
 ## Privacy and security model
 
@@ -132,8 +132,12 @@ Extension analysis recognizes login, SIP/WebRTC registration, monitoring, explic
 
 ### Explicit log-type selection
 
-Before reading a file, SignalTrace requires the support engineer to select **SocketIO / EFV**, **PJSIP RTT / Reachability**, **eFrontVoice-IVR**, or **eFrontVoice**. The Analyze action remains disabled until both a type and local file are selected. Only the selected parser executes, so normal eFrontVoice messages such as `IvrClientHandler` or `100|IVR|` cannot create an IVR report. Selecting a replacement file and using **New log** clear all prior results and entity selections.
+Before reading a file, SignalTrace requires the support engineer to select **SocketIO / EFV**, **PJSIP RTT / Reachability**, **Asterisk-IVR**, **OpsCentral Webhook**, **eFrontVoice-IVR**, or **eFrontVoice**. The Analyze action remains disabled until both a type and local file are selected. Only the selected parser executes, so normal eFrontVoice messages such as `IvrClientHandler` or `100|IVR|` cannot create an IVR report. Selecting a replacement file and using **New log** clear all prior results and entity selections.
 
 ### Asterisk-IVR call routing
 
 V7 adds an explicit **Asterisk-IVR** log type. Calls are conservatively isolated by Process ID, linked ID, unique ID, and only then Caller ID/time fallback. The report distinguishes answered or normally transferred calls from `BUSY`, `CHANUNAVAIL`, `NOANSWER`, and incomplete routing, includes a selected-call evidence timeline and ring duration, and recommends status-specific checks without executing commands. `NORMACAUSE` alone is never treated as proof of answer.
+
+### OpsCentral Webhook messaging flow
+
+V8 adds an explicit **OpsCentral Webhook** analyzer for locally uploaded messaging-flow logs. Transactions are isolated by `[TRX: …]`, joined timestamp records are normalized, node journeys and confirmed routing outcomes are reconstructed, and customer numbers, message content, credentials, tokens, authorization data, and passwords are masked in every visible, copied, or exported record. Successful routing confirms assignment to an Agent group only; it does not claim Agent acceptance or reply.

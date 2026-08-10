@@ -72,3 +72,11 @@ footer { max-width: 1100px; margin: 0 auto; padding: 27px 40px 40px; color: #536
 .routing-result.status-no-answer { color: #ffc25f; }
 .routing-result.status-incomplete-unknown { color: #8da0a4; }
 .summary-sections ul { color: #aebdc0; font-size: 11px; line-height: 1.7; padding-left: 18px; }
+.webhook-filters { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 20px 24px; border-bottom: 1px solid var(--border); }
+.search-filter > span { display:block; color:var(--muted); font-size:8px; letter-spacing:1px; text-transform:uppercase; margin-bottom:5px; }
+.search-filter input { width:100%; box-sizing:border-box; background:#0d191c; border:1px solid var(--border); border-radius:7px; color:#d8e3e5; padding:9px 11px; font-size:10px; }
+.flow-journey { padding:26px 34px; border-bottom:1px solid var(--border); }.flow-journey > div { display:flex; align-items:center; gap:14px; margin-top:16px; flex-wrap:wrap; }.flow-journey div span { display:flex; align-items:center; gap:7px; }.flow-journey span b { background:#12282c; color:#7bd8df; border:1px solid #27535a; border-radius:6px; padding:8px; }.flow-journey span small { color:#aebdc0; }.flow-journey span i { color:#60777b; font-style:normal; margin-left:7px; }
+.webhook-successfully-routed { color:#72dda8; }.webhook-blacklisted,.webhook-processing-error { color:#ff6872; }.webhook-timeout,.webhook-invalid-selection,.webhook-outside-operation-hours { color:#ffc25f; }.webhook-incomplete-unknown { color:#8da0a4; }
+.raw-evidence { margin:0 34px 34px; background:#091315; border:1px solid var(--border); border-radius:7px; padding:14px; }.raw-evidence summary { cursor:pointer; color:#9db0b3; font-size:10px; text-transform:uppercase; letter-spacing:1px; }.raw-evidence pre { white-space:pre-wrap; overflow-wrap:anywhere; color:#82979a; font-size:9px; line-height:1.6; }.evidence-actions { display:flex; gap:8px; margin:14px 0; }.evidence-actions button { background:#102124; border:1px solid var(--border); border-radius:5px; color:#b9c7c9; padding:7px 10px; cursor:pointer; font-size:9px; }
+@media (max-width: 900px) { .webhook-filters { grid-template-columns: repeat(2,1fr); } }
+@media (max-width: 520px) { .webhook-filters { grid-template-columns:1fr; }.flow-journey { padding-left:20px; padding-right:20px; }.raw-evidence { margin-left:20px; margin-right:20px; } }

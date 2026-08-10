@@ -1,7 +1,7 @@
 {
-  "name": "signaltrace-v7",
+  "name": "signaltrace-v8",
   "private": true,
-  "version": "7.0.0",
+  "version": "8.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",

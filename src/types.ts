@@ -1,5 +1,5 @@
 export type NetworkSeverity = 'critical' | 'important' | 'media-quality'
-export type LogType = 'socketio-efv' | 'pjsip-rtt' | 'efrontvoice-ivr' | 'efrontvoice' | 'asterisk-ivr'
+export type LogType = 'socketio-efv' | 'pjsip-rtt' | 'efrontvoice-ivr' | 'efrontvoice' | 'asterisk-ivr' | 'opscentral-webhook'
 
 /** Retained internally for diagnostics and tests; never rendered in the normal UI. */
 export interface SourceReference {
@@ -43,6 +43,7 @@ export interface AnalysisResult {
   voiceCalls: VoiceCall[]
   voiceExtensions: VoiceExtensionAnalysis[]
   asteriskIvrCalls: AsteriskIvrCall[]
+  webhookTransactions: WebhookTransaction[]
 }
 
 
@@ -104,3 +105,8 @@ export interface ExtensionNetworkAnalysis {
 export type AsteriskIvrRoutingResult = 'Successfully Answered' | 'Successfully Transferred' | 'Busy' | 'Channel Unavailable' | 'No Answer' | 'Incomplete / Unknown'
 export interface AsteriskIvrEvent { timestamp?: string; epochMs?: number; lineNumber: number; type: 'INBOUND'|'DIAL'|'RINGING'|'ANSWERED'|'TRANSFER'|'STATUS'; label: string; rawLine: string }
 export interface AsteriskIvrCall { key:string; processId?:string; callerId?:string; dnis?:string; agentExtension?:string; dialStatus?:string; linkedId?:string; uniqueId?:string; sourceChannel?:string; destinationChannel?:string; startTimestamp?:string; ringingTimestamp?:string; answeredTimestamp?:string; transferResult?:string; routingResult:AsteriskIvrRoutingResult; ringDurationSeconds?:number; events:AsteriskIvrEvent[]; finding:string; recommendedActions:string[]; problemScore:number }
+
+export type WebhookStatus = 'Successfully Routed'|'Blacklisted'|'Outside Operation Hours'|'Invalid Selection'|'Timeout'|'Processing Error'|'Incomplete / Unknown'
+export interface WebhookEvidence { timestamp?:string; timestampMs?:number; lineNumber:number; label:string; maskedRecord:string }
+export interface WebhookNode { id:string; type:string }
+export interface WebhookTransaction { trxId:string; customerNumber?:string; maskedCustomer:string; startTimestamp?:string; endTimestamp?:string; processingDurationMs?:number; threadName?:string; startNode?:string; currentNode?:string; nextNode?:string; nodeJourney:WebhookNode[]; messageIds:string[]; selectedOption?:string; blacklistResult?:'Passed'|'Blocked'; holidayResult?:boolean; operationHours?:'Open'|'Closed'; routeNode?:string; transactionStatus?:string; agentGroupId?:string; timeoutIndicators:string[]; errors:string[]; status:WebhookStatus; evidence:WebhookEvidence[]; finding:string; importantNote?:string; recommendations:string[]; problemScore:number }

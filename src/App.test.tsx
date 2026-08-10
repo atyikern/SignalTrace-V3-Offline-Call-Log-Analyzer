@@ -2,6 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import App from './App'
+import webhookFixture from './test/fixtures/webhook-healthy.log?raw'
 import asteriskIvrFixture from './test/fixtures/asterisk-ivr.log?raw'
 import voiceFixture from './test/fixtures/voice-routing.log?raw'
 import ivrFixture from './test/fixtures/ivr-call-flow.log?raw'
@@ -13,7 +14,7 @@ Agent: amina Agent ID: 605 Extension: 8042
 [2026-03-14 11:02:01] Broken pipe`
 
 
-async function uploadAndAnalyze(user: ReturnType<typeof userEvent.setup>, contents: string, name: string, type: 'socketio-efv'|'pjsip-rtt'|'efrontvoice-ivr'|'efrontvoice'|'asterisk-ivr') {
+async function uploadAndAnalyze(user: ReturnType<typeof userEvent.setup>, contents: string, name: string, type: 'socketio-efv'|'pjsip-rtt'|'efrontvoice-ivr'|'efrontvoice'|'asterisk-ivr'|'opscentral-webhook') {
   await user.selectOptions(screen.getByLabelText('Log Type'), type)
   await user.upload(screen.getByLabelText('Choose log'), new File([contents], name, { type: 'text/plain' }))
   await user.click(screen.getByRole('button', { name: 'Analyze' }))
@@ -69,7 +70,7 @@ describe('App', () => {
 
   it('advertises OpsCentral SocketIO / EFV and Asterisk / FreePBX support', () => {
     render(<App />)
-    expect(screen.getByRole('button', { name: 'SignalTrace home' })).toHaveTextContent('SignalTrace V7')
+    expect(screen.getByRole('button', { name: 'SignalTrace home' })).toHaveTextContent('SignalTrace V8')
     expect(screen.getByText('Log, Voice & Network Analyzer')).toBeInTheDocument()
     expect(screen.getByText('Supported Logs')).toBeInTheDocument()
     const supportedLogs = screen.getByText('Supported Logs').parentElement!
@@ -195,6 +196,22 @@ describe('App', () => {
     await user.selectOptions(selector,'process:92')
     expect(screen.getAllByText('Successfully Transferred').length).toBeGreaterThan(0)
     expect(screen.getByText('11 sec')).toBeInTheDocument()
+  })
+
+  it('renders the masked OpsCentral Webhook messaging-flow report and filters internally', async () => {
+    const user=userEvent.setup();render(<App />)
+    await uploadAndAnalyze(user,webhookFixture,'webhook.log','opscentral-webhook')
+    expect(await screen.findByText('Messaging Flow')).toBeInTheDocument()
+    expect(screen.getByText('TRX 4125 — 6598****28 — 10:37:26 — Successfully Routed')).toBeInTheDocument()
+    expect(screen.getAllByText('Successfully Routed').length).toBeGreaterThan(0)
+    expect(screen.getByText('19.2 sec')).toBeInTheDocument()
+    const journey=screen.getByText('Flow Journey').parentElement!
+    expect(within(journey).getByText('532').parentElement).toHaveTextContent('Start')
+    expect(within(journey).getByText('544').parentElement).toHaveTextContent('Route to Agent Group')
+    expect(document.body).not.toHaveTextContent('6598175528')
+    expect(document.body).not.toHaveTextContent('hello my account is failing')
+    await user.type(screen.getByLabelText('Search'),'6598175528')
+    expect(screen.getByText('TRX 4125 — 6598****28 — 10:37:26 — Successfully Routed')).toBeInTheDocument()
   })
 
 })
