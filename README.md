@@ -1,8 +1,8 @@
-# SignalTrace V9 — Log, Voice & Network Analyzer
+# SignalTrace V10 — Log, Voice & Network Analyzer
 
 V9 expands eFrontVoice-IVR into per-call production routing analysis. It correlates digit attempts, route-node and agent-lookup stages, booking, call-record creation, route completion, and disconnects; reports stage latency against configurable local thresholds; and keeps successful calls with recoverable delays or digit retries classified as successful with warnings. The IVR workflow accepts either `.log`/`.txt` uploads or pasted records and provides a call selector plus an expandable timestamped technical timeline.
 
-SignalTrace V9 is a browser-only troubleshooting view for exported OpsCentral SocketIO / EFV, Asterisk / FreePBX, Asterisk-IVR, PJSIP RTT / Reachability, and eFrontVoice `.log` and `.txt` files. The required log-type selection ensures that only the intended deterministic analyzer runs.
+SignalTrace V10 is a browser-only troubleshooting view for exported OpsCentral SocketIO / EFV, Asterisk / FreePBX, Asterisk-IVR, PJSIP RTT / Reachability, and eFrontVoice `.log` and `.txt` files. The required log-type selection ensures that only the intended deterministic analyzer runs.
 
 The **OCOD5 WhatsApp Messaging** analyzer correlates outbound provider submissions and webhook callbacks by Message/Task ID, retains Conversation IDs, identifies inbound replies, reports Sent → Delivered → Read timing, and treats repeated callbacks as duplicates rather than failures. Friendly summaries show complete customer and business routing numbers while keeping message bodies out of the summary; matched raw records remain available only in the local expandable technical timeline. Send, delivery, and informational read thresholds are configurable in the upload workflow.
 
