@@ -1,0 +1,11 @@
+2026-08-07 07:58:21,100 DEBUG 100|AGT|LOGIN|elitroha|*****|21|23197001
+2026-08-07 07:58:21,200 DEBUG LOGIN_RSP|OK|23197001 LOGINACK_RSP|OK|23197001
+2026-08-07 07:58:22,100 DEBUG 100|SIP|REG|23197001 loginWebRTCRegOnly()
+2026-08-07 07:58:23,100 DEBUG startMonitorWebRtc() Device 23197001 monitored webrtc loggedIn(), isPbxDisconnected: false
+2026-08-07 07:58:23,200 DEBUG ExtensionStatusEvent[statustext='Idle',exten='23197001',status='0']
+2026-08-07 07:58:23,300 ERROR agentTerminalNotReady(), ignored 23197001
+2026-08-07 07:58:51,100 DEBUG REAL AGENT : 23197001
+2026-08-07 08:38:13,100 DEBUG ExtensionStatusEvent[statustext='Ringing',exten='23197001',status='8'] Incoming call 23197001
+2026-08-07 08:38:16,100 DEBUG Call connected 23197001
+2026-08-07 08:45:00,100 DEBUG callDisconnected() 23197001
+2026-08-07 17:26:00,100 DEBUG logout stopMonitor() terminalListenerEnded(), error: 0 Removed Device 23197001
