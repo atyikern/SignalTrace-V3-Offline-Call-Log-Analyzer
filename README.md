@@ -145,3 +145,7 @@ V8 adds an explicit **OpsCentral Webhook** analyzer for locally uploaded messagi
 #### CallFront Agent routing
 
 Webhook transactions now include a separate **Agent Routing Analysis** when IVR client, `GETAVAILAGT`, response, processing-value, or CallFront disconnection records are present. The analysis correlates by complete WebSocket session rather than worker thread, distinguishes client lifecycle from actual Agent lookup, supports retries and final `-1` results, measures request-to-response delay, and never treats Agent selection as proof of Agent acceptance or reply.
+
+#### Authoritative eFrontVoice Transaction IDs
+
+eFrontVoice Caller Routing treats only explicit `TID: <number>` fields as authoritative Transaction IDs. Repeated TID records are deduplicated in the transaction selector, while generic transaction-object `id=`, Call ID, Agent ID, and customer ID fields are never displayed as the Transaction ID. Calls without an explicit TID show **Not detected**.

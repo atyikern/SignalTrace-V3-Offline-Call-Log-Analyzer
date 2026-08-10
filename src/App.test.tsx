@@ -140,7 +140,9 @@ describe('App', () => {
     expect(screen.getByText('Not Reached')).toBeInTheDocument()
     await user.selectOptions(calls,'178606822570870')
     expect(screen.getByText('Successful')).toBeInTheDocument()
-    expect(within(screen.getByText('Caller ID Routing Analysis').closest('article')!).getByText('Agent ID').parentElement).toHaveTextContent('21')
+    const report=screen.getByText('Caller ID Routing Analysis').closest('article')!
+    expect(within(report).getByText('Agent ID').parentElement).toHaveTextContent('21')
+    expect(within(report).getByText('Not detected')).toBeInTheDocument()
   })
 
   it('requires both a Log Type and file before analysis', async () => {
@@ -233,6 +235,16 @@ describe('App', () => {
     expect(screen.getByText('RoutingEntry_1769306836405')).toBeInTheDocument()
     expect(screen.getByText('2.69%')).toBeInTheDocument()
     expect(screen.getByText(/do not confirm agent acceptance or reply/i)).toBeInTheDocument()
+  })
+
+  it('shows deduplicated authoritative eFrontVoice TIDs in the transaction selector', async () => {
+    const tidLog=`2026-08-10 10:00:00,000 DEBUG [178600000000001] [2] [96946315] TID: 8169653, callID: 178600000000001 addCallTransaction()
+2026-08-10 10:00:01,000 DEBUG [178600000000001] [2] [96946315] TID: 8169653, callID: 178600000000001 GETAVAILAGT
+2026-08-10 11:00:00,000 DEBUG [178600000000002] [2] [96946315] TID: 8170813, callID: 178600000000002 addCallTransaction()`
+    const user=userEvent.setup();render(<App />);await uploadAndAnalyze(user,tidLog,'voice-tids.log','efrontvoice')
+    const selector=await screen.findByLabelText('Selected Transaction')
+    expect(within(selector).getAllByRole('option').map(option=>option.textContent)).toEqual(['TID 8169653','TID 8170813'])
+    expect(screen.getByText('8169653')).toBeInTheDocument()
   })
 
 })
