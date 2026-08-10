@@ -219,4 +219,20 @@ describe('App', () => {
     expect(screen.getByText('TRX 4125 — 6598175528 — 10:37:26 — Successfully Routed')).toBeInTheDocument()
   })
 
+  it('shows CallFront agent-routing results without claiming Agent acceptance', async () => {
+    const routing=`2026-08-10 10:20:01,000 INFO [Timer-5] [WS_7#601155411633#7] [TRX: 55] IVR_NODE_START NodeId: 1 startClient()
+2026-08-10 10:20:02,000 INFO [Thread-1604] [WS_7#601155411633#7] [TRX: 55] sendToCallFrontServer(), sending: 100|IVR|innovax.opscentral.callfront.ivr.RoutingEntry_1769306836405|GETAVAILAGT|20|7|1|1|4|4|2|null|601155411633|false
+2026-08-10 10:20:03,240 INFO [Thread-1996] [WS_7#601155411633#7] [TRX: 55] receivedGETAVAILAGT_RSP with agent ID: 733
+2026-08-10 10:20:04,000 INFO [Thread-2000] [WS_7#601155411633#7] [TRX: 55] processRoutingEntry() == RoutingEntry process time : 290 of max: 10800
+2026-08-10 10:20:05,000 INFO [Timer-5] [WS_7#601155411633#7] [TRX: 55] stopClient()`
+    const user=userEvent.setup();render(<App />);await uploadAndAnalyze(user,routing,'routing.log','opscentral-webhook')
+    expect(await screen.findByText('Agent Routing Analysis')).toBeInTheDocument()
+    expect(screen.getAllByText('Agent Found').length).toBeGreaterThan(0)
+    expect(screen.getByText('1.24 sec')).toBeInTheDocument()
+    expect(screen.getByText('WS_7#601155411633#7')).toBeInTheDocument()
+    expect(screen.getByText('RoutingEntry_1769306836405')).toBeInTheDocument()
+    expect(screen.getByText('2.69%')).toBeInTheDocument()
+    expect(screen.getByText(/do not confirm agent acceptance or reply/i)).toBeInTheDocument()
+  })
+
 })

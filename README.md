@@ -141,3 +141,7 @@ V7 adds an explicit **Asterisk-IVR** log type. Calls are conservatively isolated
 ### OpsCentral Webhook messaging flow
 
 V8 adds an explicit **OpsCentral Webhook** analyzer for locally uploaded messaging-flow logs. Transactions are isolated by `[TRX: …]`, joined timestamp records are normalized, node journeys and confirmed routing outcomes are reconstructed, and message content, credentials, tokens, authorization data, and passwords are masked in every visible, copied, or exported record. Customer numbers remain fully visible for support correlation. Successful routing confirms assignment to an Agent group only; it does not claim Agent acceptance or reply.
+
+#### CallFront Agent routing
+
+Webhook transactions now include a separate **Agent Routing Analysis** when IVR client, `GETAVAILAGT`, response, processing-value, or CallFront disconnection records are present. The analysis correlates by complete WebSocket session rather than worker thread, distinguishes client lifecycle from actual Agent lookup, supports retries and final `-1` results, measures request-to-response delay, and never treats Agent selection as proof of Agent acceptance or reply.

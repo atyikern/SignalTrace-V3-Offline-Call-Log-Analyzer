@@ -116,3 +116,15 @@ footer { max-width: 1100px; margin: 0 auto; padding: 27px 40px 40px; color: #536
   .webhook-report .problem-time { grid-template-columns: 1fr; }
   .webhook-report .summary-sections p, .webhook-report .summary-sections ul, .webhook-report .indicator { font-size: 14px; }
 }
+.webhook-report .agent-routing-analysis { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); background: #0a1517; }
+.webhook-report .agent-routing-heading { padding: 24px; }
+.webhook-report .agent-routing-heading h2 { margin: 8px 0 0; font-size: 20px; }
+.webhook-report .agent-routing-counters b { font-size: 24px; }
+.webhook-report .agent-routing-counters span, .webhook-report .agent-routing-details span { font-size: 13px; }
+.webhook-report .agent-routing-details b { font-size: 15px; overflow-wrap: anywhere; }
+.webhook-report .routing-found { color: #72dda8; }.webhook-report .routing-retry { color: #ffc25f; }.webhook-report .routing-none { color: #ff6872; }.webhook-report .routing-incomplete { color: #8da0a4; }
+.webhook-report .agent-routing-timeline { padding: 24px; }
+.webhook-report .agent-routing-timeline > .section-label, .webhook-report .agent-routing-finding > .section-label { font-size: 16px; }
+.webhook-report .agent-routing-finding { margin: 0 24px 24px; padding: 22px; border: 1px solid var(--border); border-radius: 7px; background: #0e1c1e; }
+.webhook-report .agent-routing-finding p, .webhook-report .agent-routing-finding ul { font-size: 16px; line-height: 1.5; color: #aebdc0; }
+@media (max-width: 520px) { .webhook-report .agent-routing-heading, .webhook-report .agent-routing-timeline { padding: 20px; }.webhook-report .agent-routing-finding { margin: 0 20px 20px; }.webhook-report .agent-routing-finding p, .webhook-report .agent-routing-finding ul { font-size: 14px; } }
