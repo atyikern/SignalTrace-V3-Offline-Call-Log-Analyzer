@@ -35,19 +35,20 @@ describe('App', () => {
     expect(screen.getByText('Uploaded logs are processed locally and are not permanently stored.')).toBeInTheDocument()
   })
 
-  it('shows a concise, chronological Agent network report without source details', async () => {
+  it('shows an Agent report in the shared summary, details, and timeline layout', async () => {
     const user = userEvent.setup()
     render(<App />)
     await uploadAndAnalyze(user, log, 'synthetic.log', 'socketio-efv')
     await user.selectOptions(await screen.findByLabelText('Selected Agent'), 'id:604')
-    await waitFor(() => expect(screen.getByRole('heading', { name: 'kumaresan' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getAllByText('kumaresan').length).toBeGreaterThan(0))
     expect(screen.getByText('High network instability detected')).toBeInTheDocument()
     const times = screen.getAllByRole('time').map((time) => time.textContent)
     expect(times).toEqual(['09:49:23', '14:51:49'])
     expect(screen.queryByText(/Line \d+/)).not.toBeInTheDocument()
     expect(screen.queryByText('Evidence')).not.toBeInTheDocument()
-    expect(screen.queryByText('Agent ID')).not.toBeInTheDocument()
-    expect(screen.queryByText('Extension')).not.toBeInTheDocument()
+    expect(screen.getByText('Technical Details')).toBeInTheDocument()
+    expect(screen.getByText('Agent ID')).toBeInTheDocument()
+    expect(screen.getByText('Extension')).toBeInTheDocument()
     expect(screen.queryByLabelText('Selected Extension')).not.toBeInTheDocument()
   })
 
@@ -57,9 +58,9 @@ describe('App', () => {
     await uploadAndAnalyze(user, log, 'synthetic.txt', 'socketio-efv')
     const selector = await screen.findByLabelText('Selected Agent')
     await user.selectOptions(selector, 'id:605')
-    expect(screen.getByRole('heading', { name: 'amina' })).toBeInTheDocument()
+    expect(screen.getAllByText('amina').length).toBeGreaterThan(0)
     expect(screen.getByText('Connection instability detected')).toBeInTheDocument()
-    expect(within(screen.getByText('11:02:01').parentElement!).getByText('Broken pipe')).toBeInTheDocument()
+    expect(within(screen.getByText('11:02:01').parentElement!).getAllByText(/Broken pipe/).length).toBeGreaterThan(0)
   })
 
   it('rejects unsupported file extensions before reading', async () => {
@@ -69,9 +70,9 @@ describe('App', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Choose a supported .log or .txt file for a Voice, Messaging, or Connectivity analyzer.')
   })
 
-  it('presents the V11 operational scope and categorized log types', () => {
+  it('presents the V11.5 operational scope and categorized log types', () => {
     render(<App />)
-    expect(screen.getByRole('button', { name: 'SignalTrace home' })).toHaveTextContent('SignalTrace V11')
+    expect(screen.getByRole('button', { name: 'SignalTrace home' })).toHaveTextContent('SignalTrace V11.5')
     expect(screen.getByText('Voice, Messaging & Connectivity Analyzer')).toBeInTheDocument()
     expect(screen.getByRole('heading',{level:1})).toHaveTextContent('Diagnose voice, messaging, and connectivity issues faster.')
     expect(screen.queryByText('Supported Logs')).not.toBeInTheDocument()
@@ -121,7 +122,7 @@ describe('App', () => {
     expect(screen.queryByRole('heading', { name: '23177011' })).not.toBeInTheDocument()
     expect(screen.getByText('RTT Warning')).toBeInTheDocument()
     expect(screen.getByText('Current Status').parentElement).toHaveTextContent('Reachable')
-    expect(screen.getByText('Recovered after 57 sec')).toBeInTheDocument()
+    expect(screen.getByText(/Recovered after 57 sec/)).toBeInTheDocument()
     expect(screen.queryByText('Evidence')).not.toBeInTheDocument()
   })
 
@@ -173,7 +174,7 @@ describe('App', () => {
     expect(screen.getByText('Successful')).toBeInTheDocument()
     const report=screen.getByText('Caller ID Routing Analysis').closest('article')!
     expect(within(report).getByText('Agent ID').parentElement).toHaveTextContent('21')
-    expect(within(report).getByText('Not detected')).toBeInTheDocument()
+    expect(within(report).queryByText('Not detected')).not.toBeInTheDocument()
   })
 
   it('requires both a Log Type and file before analysis', async () => {
@@ -239,9 +240,8 @@ describe('App', () => {
     expect(screen.getAllByText('Successfully Routed').length).toBeGreaterThan(0)
     expect(screen.getByText('19.2 sec')).toBeInTheDocument()
     expect(screen.queryByText(/10:37:26,639/)).not.toBeInTheDocument()
-    const journey=screen.getByText('Message Node Flow ID').parentElement!
-    expect(within(journey).getByText('532').parentElement).toHaveTextContent('Start')
-    expect(within(journey).getByText('544').parentElement).toHaveTextContent('Route to Agent Group')
+    expect(screen.getAllByText('532 → 533 → 538 → 688 → 544').length).toBeGreaterThan(0)
+    expect(screen.getByText(/532 Start → 533 Operation Hours/)).toBeInTheDocument()
     expect(document.body).toHaveTextContent('6598175528')
     expect(document.body).not.toHaveTextContent('hello my account is failing')
     expect(screen.queryByText('Raw Log Evidence')).not.toBeInTheDocument()
@@ -278,6 +278,6 @@ describe('App', () => {
     expect(screen.getByText('8169653')).toBeInTheDocument()
   })
 
-  it('renders OCOD5 WhatsApp message selection and successful progression',async()=>{const user=userEvent.setup();render(<App/>);await uploadAndAnalyze(user,whatsappFixture,'whatsapp.log','ocod5-whatsapp');expect(await screen.findByText('Message delivery analysis')).toBeInTheDocument();expect(screen.getByLabelText('Selected WhatsApp Message')).toBeInTheDocument();expect(screen.getByText('Delivered and read')).toBeInTheDocument();expect(screen.getByText('Sent → Delivered → Read')).toBeInTheDocument();expect(screen.getByText('1')).toBeInTheDocument();expect(screen.getAllByText(/Business 60111111111 → Customer 6598175528/).length).toBeGreaterThan(0);const summary=document.querySelector('.whatsapp-summary')!;expect(summary).not.toHaveTextContent('Conversation ID');expect(summary).not.toHaveTextContent('Message / Task ID');expect(summary).not.toHaveTextContent('Reply Reference')})
+  it('renders OCOD5 WhatsApp message selection and successful progression',async()=>{const user=userEvent.setup();render(<App/>);await uploadAndAnalyze(user,whatsappFixture,'whatsapp.log','ocod5-whatsapp');expect(await screen.findByText('Message delivery analysis')).toBeInTheDocument();expect(screen.getByLabelText('Selected WhatsApp Message')).toBeInTheDocument();expect(screen.getAllByText('Delivered and read').length).toBeGreaterThan(0);expect(screen.getByText(/Sent → Delivered → Read/)).toBeInTheDocument();expect(screen.getByText(/Duplicate callbacks\/events:/).parentElement).toHaveTextContent('1');expect(screen.getAllByText(/Business 60111111111 → Customer 6598175528/).length).toBeGreaterThan(0);expect(screen.getByText('Technical Details')).toBeInTheDocument();expect(screen.getByText(/Technical Timeline \(\d+ events\)/)).toBeInTheDocument()})
 
 })

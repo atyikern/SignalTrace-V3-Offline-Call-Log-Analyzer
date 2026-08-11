@@ -1,10 +1,12 @@
-# SignalTrace V11 — Voice, Messaging & Connectivity Analyzer
+# SignalTrace V11.5 — Voice, Messaging & Connectivity Analyzer
 
 V9 expands eFrontVoice-IVR into per-call production routing analysis. It correlates digit attempts, route-node and agent-lookup stages, booking, call-record creation, route completion, and disconnects; reports stage latency against configurable local thresholds; and keeps successful calls with recoverable delays or digit retries classified as successful with warnings. The IVR workflow accepts either `.log`/`.txt` uploads or pasted records and provides a call selector plus an expandable timestamped technical timeline.
 
-SignalTrace V11 is a browser-only troubleshooting view for exported SocketIO / ECONNRESET, Asterisk / FreePBX, Asterisk-IVR, RTT / UNREACHABLE, and eFrontVoice `.log` and `.txt` files. The required log-type selection ensures that only the intended deterministic analyzer runs.
+SignalTrace V11.5 is a browser-only troubleshooting view for exported SocketIO / ECONNRESET, Asterisk / FreePBX, Asterisk-IVR, RTT / UNREACHABLE, and eFrontVoice `.log` and `.txt` files. The required log-type selection ensures that only the intended deterministic analyzer runs.
 
 V11 adds offline case management to every analysis result. **Save Case** creates a unified JSON report containing a Section ID, module and analysis time, ticket/customer metadata, phone number, transaction ID, finding, evidence-based root cause, and recommendation. Browsers that support the File System Access API can save into a chosen `date/customer` folder; other browsers download the JSON file. **Case History** stores searchable report metadata in browser local storage so cases can be found by ticket, customer, phone, transaction ID, or root cause.
+
+V11.5 standardizes every analyzer result through a shared presentation schema and renderer. Each existing parser remains independent, while adapters map its status, identifiers, chronological evidence, finding, root cause, and recommendations into the same OCOD5-inspired summary, collapsible Technical Details, and Technical Timeline layout.
 
 The **OCOD5 WhatsApp Messaging** analyzer correlates outbound provider submissions and webhook callbacks by Message/Task ID, retains Conversation IDs, identifies inbound replies, reports Sent → Delivered → Read timing, and treats repeated callbacks as duplicates rather than failures. Friendly summaries show complete customer and business routing numbers while keeping message bodies out of the summary; matched raw records remain available only in the local expandable technical timeline. Send, delivery, and informational read thresholds are configurable in the upload workflow.
 

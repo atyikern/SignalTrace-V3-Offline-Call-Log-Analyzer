@@ -136,7 +136,25 @@ footer { max-width: 1100px; margin: 0 auto; padding: 27px 40px 40px; color: #718
 .whatsapp-report .ivr-outcome strong{color:#16a34a}.whatsapp-report .metric-row b{overflow-wrap:anywhere}.whatsapp-report .technical-timeline{border-top:1px solid var(--border)}
 .whatsapp-technical-details{padding:18px 34px;border-bottom:1px solid var(--border)}.whatsapp-technical-details summary{cursor:pointer;font-weight:700}.whatsapp-technical-details dl{display:grid;grid-template-columns:max-content 1fr;gap:8px 18px;margin:16px 0 0}.whatsapp-technical-details dt{color:var(--muted);font-size:11px}.whatsapp-technical-details dd{margin:0;overflow-wrap:anywhere;font-size:12px}
 
-/* SignalTrace V11 — bright enterprise operations theme */
+/* V11.5 shared OCOD5-inspired analysis presentation */
+.shared-analysis-report { line-height: 1.5; }
+.shared-analysis-report .analysis-summary p { margin-bottom: 0; overflow-wrap: anywhere; }
+.shared-analysis-report .shared-summary-metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.shared-analysis-report .shared-summary-metrics > div { min-height: 62px; }
+.shared-analysis-report .whatsapp-technical-details dl { display: block; }
+.shared-analysis-report .technical-detail-row { display: grid; grid-template-columns: minmax(150px, .65fr) minmax(0, 1.35fr); gap: 18px; padding: 9px 0; border-bottom: 1px solid var(--border); }
+.shared-analysis-report .technical-detail-row:last-child { border-bottom: 0; }
+.shared-analysis-report .technical-detail-row dt { font-weight: 700; }
+.shared-analysis-report .technical-detail-row dd { color: #10233f; }
+.shared-analysis-report .technical-timeline { border-top: 0; border-bottom: 1px solid var(--border); }
+.shared-analysis-report .technical-timeline .indicator { white-space: normal; }
+.shared-analysis-report .shared-findings { padding-top: 24px; }
+.shared-analysis-report .shared-findings .conclusion { background: #eff6ff; border-color: #bfdbfe; }
+.shared-analysis-report .shared-findings .conclusion ul { color: #334b65; font-size: 12px; line-height: 1.7; }
+@media (max-width: 800px) { .shared-analysis-report .shared-summary-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .shared-analysis-report .shared-summary-metrics { grid-template-columns: 1fr; }.shared-analysis-report .technical-detail-row { grid-template-columns: 1fr; gap: 3px; } }
+
+/* SignalTrace V11.5 — bright enterprise operations theme */
 .app-header { box-shadow: 0 1px 8px rgba(30, 64, 104, .07); }
 .brand-mark { box-shadow: inset 0 0 0 1px rgba(22, 119, 255, .05); }
 .offline-badge { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
