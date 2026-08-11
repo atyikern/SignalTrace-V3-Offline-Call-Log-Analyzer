@@ -1,0 +1,11 @@
+2026-08-07 15:49:17,100 DEBUG [178606822570870] [2] [96946315] addCallTransaction() addTransaction(), inserted: {id=11495,campaignid=2,agentid=0,deviceno=null,callerid=96946315,routestart=2026-08-07T15:49:17}
+2026-08-07 15:49:40,100 DEBUG [178606822570870] [2] [96946315] GETAVAILAGT getAvailableAgent(), campaign: 2, agent group: 17, caller id: 96946315
+2026-08-07 15:50:40,100 DEBUG [178606822570870] [2] [96946315] GETAVAILAGT getAvailableAgent(), campaign: 2, agent group: 17, caller id: 96946315
+2026-08-07 15:51:35,100 DEBUG [178606822570870] [2] [96946315] GETAVAILAGT CONFIRMAGTBOOKING_RSP|OK|23197001
+2026-08-07 15:51:35,200 DEBUG [178606822570870] [2] [96946315] UPDATECALLTRANSACTION|21|23197001| agentExtension: 23197001
+2026-08-07 15:51:37,100 DEBUG [178606822570870] [2] [96946315] DialEvent from: 96946315 to : 23197001 connectionAlerting()
+2026-08-07 15:51:40,143 DEBUG [178606822570870] [2] [96946315] connectionEstablished() Call connected talkstart=2026-08-07T15:51:40
+2026-08-07 16:03:28,100 DEBUG [178606822570870] [2] [96946315] callDisconnected() talkend=2026-08-07T16:03:28,status=4,hangupCause=16
+2026-08-07 17:00:00,000 DEBUG [178606822570871] [2] [96946315] addCallTransaction() addTransaction(), inserted: {id=11496,campaignid=2,callerid=96946315}
+2026-08-07 17:00:01,000 DEBUG [178606822570871] [2] [96946315] GETAVAILAGT getAvailableAgent(), campaign: 2, agent group: 17, caller id: 96946315
+2026-08-07 17:01:01,000 DEBUG [178606822570871] [2] [96946315] GETAVAILAGT getAvailableAgent(), campaign: 2, agent group: 17, caller id: 96946315 quit()
