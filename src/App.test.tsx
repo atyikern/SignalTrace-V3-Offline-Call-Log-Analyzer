@@ -93,8 +93,20 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: 'Case History' })).toBeInTheDocument()
     expect(screen.getByLabelText('Search Case History')).toHaveAttribute('placeholder', expect.stringContaining('Ticket ID'))
     expect(screen.getByText('No matching cases')).toBeInTheDocument()
+    expect(within(screen.getByLabelText('Case statistics')).getByText('Total Cases').parentElement).toHaveTextContent('0')
     await user.click(screen.getByRole('button', { name: 'Back to Analyzer' }))
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Diagnose voice, messaging, and connectivity issues faster.')
+  })
+
+  it('filters, sorts, paginates, and opens locally saved case details', async () => {
+    const records=Array.from({length:7},(_,index)=>({sectionId:`ST-${index}`,moduleName:index===0?'OCOD5 WhatsApp Messaging':index===1?'RTT / UNREACHABLE':'eFrontVoice',analysisTime:`2026-08-${String(index+1).padStart(2,'0')}T10:00:00.000Z`,ticketId:`IS${1000+index}`,customerName:index===0?'Alpha':'Customer '+index,customerGroup:'Group A',customerPhoneNumber:index===0?'+6591234567':index===1?'+60123456789':undefined,transactionId:index===0?'8831':undefined,finding:`Finding ${index}`,rootCause:`Root cause ${index}`,recommendation:`Recommendation ${index}`,technicalDetails:index===0?[{label:'Message ID',value:'msg-1'}]:undefined,technicalTimeline:index===0?[{timestamp:'2026-08-01 10:00:00,000',title:'Sent',raw:'raw status'}]:undefined}))
+    localStorage.setItem('signaltrace-v11-case-history',JSON.stringify(records))
+    const user=userEvent.setup();render(<App/>);await user.click(screen.getByRole('button',{name:'Case History'}))
+    const stats=screen.getByLabelText('Case statistics');expect(within(stats).getByText('Total Cases').parentElement).toHaveTextContent('7');expect(within(stats).getByText('Messaging').parentElement).toHaveTextContent('1');expect(within(stats).getByText('Connectivity').parentElement).toHaveTextContent('1')
+    expect(screen.getAllByRole('button',{name:/View Details/})).toHaveLength(6);await user.click(screen.getByRole('button',{name:'Next'}));expect(screen.getByText('IS1000')).toBeInTheDocument()
+    await user.click(screen.getByRole('button',{name:'WhatsApp'}));expect(screen.getByText('Alpha')).toBeInTheDocument();expect(screen.queryByText('Customer 1')).not.toBeInTheDocument();expect(screen.getAllByText('SG').length).toBeGreaterThan(0)
+    await user.click(screen.getByRole('button',{name:/View Details/}));const dialog=screen.getByRole('dialog',{name:/IS1000/});expect(within(dialog).getByText('Message ID')).toBeInTheDocument();expect(within(dialog).getByText(/Technical Timeline/)).toBeInTheDocument();await user.click(within(dialog).getByRole('button',{name:'Close Case Details'}))
+    localStorage.removeItem('signaltrace-v11-case-history')
   })
 
   it('offers a unified Save Case form for an analysis result', async () => {

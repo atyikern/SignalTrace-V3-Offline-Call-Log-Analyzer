@@ -5,6 +5,10 @@ export interface CaseContext {
   finding: string
   rootCause: string
   recommendation: string
+  technicalDetails?: Array<{ label:string; value:string|number }>
+  technicalTimeline?: Array<{ timestamp?:string; title:string; raw?:string }>
+  finalStatus?: string
+  countryCode?: string
 }
 
 export interface CaseReport extends CaseContext {
@@ -17,6 +21,41 @@ export interface CaseReport extends CaseContext {
 }
 
 export const CASE_HISTORY_KEY = 'signaltrace-v11-case-history'
+
+export type CaseCategory = 'Voice'|'Messaging'|'Connectivity'|'Other'
+export type CaseSort = 'newest'|'oldest'|'customer'|'module'
+
+export function caseCategory(moduleName:string):CaseCategory {
+  if (/whatsapp|webhook|messaging/i.test(moduleName)) return 'Messaging'
+  if (/rtt|unreachable|econnreset|socketio|connectivity/i.test(moduleName)) return 'Connectivity'
+  if (/efrontvoice|asterisk|ivr|voice/i.test(moduleName)) return 'Voice'
+  return 'Other'
+}
+
+export function caseModuleLabel(moduleName:string) {
+  if (/whatsapp/i.test(moduleName)) return 'WhatsApp'
+  if (/rtt|unreachable/i.test(moduleName)) return 'RTT / Unreachable'
+  if (/econnreset|socketio/i.test(moduleName)) return 'ECONNRESET'
+  if (/efrontvoice-ivr/i.test(moduleName)) return 'eFrontVoice-IVR'
+  if (/efrontvoice/i.test(moduleName)) return 'eFrontVoice'
+  if (/asterisk/i.test(moduleName)) return 'Asterisk-IVR'
+  if (/webhook/i.test(moduleName)) return 'Webhook'
+  return moduleName
+}
+
+export function countryCode(phone?:string) {
+  const digits=phone?.replace(/\D/g,'')
+  if (!digits) return undefined
+  if (digits.startsWith('65')) return 'SG'
+  if (digits.startsWith('60')) return 'MY'
+  if (digits.startsWith('63')) return 'PH'
+  if (digits.startsWith('62')) return 'ID'
+  return undefined
+}
+
+export function caseCountry(item:Pick<CaseReport,'customerPhoneNumber'|'countryCode'>) {
+  return item.countryCode?.trim().toUpperCase()||countryCode(item.customerPhoneNumber)
+}
 
 const safeSegment = (value: string) => value.trim().replace(/[^a-z0-9._-]+/gi, '_').replace(/^_+|_+$/g, '') || 'Unknown'
 
@@ -35,6 +74,10 @@ export function createCaseReport(context: CaseContext, fields: Pick<CaseReport, 
     finding: context.finding,
     rootCause: context.rootCause,
     recommendation: context.recommendation,
+    technicalDetails: context.technicalDetails,
+    technicalTimeline: context.technicalTimeline,
+    finalStatus: context.finalStatus,
+    countryCode: context.countryCode??countryCode(context.customerPhoneNumber),
   }
 }
 
@@ -53,7 +96,15 @@ export function rememberCase(report: CaseReport, storage: Pick<Storage, 'getItem
 export function searchCases(cases: CaseReport[], query: string) {
   const normalized = query.trim().toLowerCase()
   if (!normalized) return cases
-  return cases.filter(item => [item.ticketId,item.customerName,item.customerPhoneNumber,item.transactionId,item.rootCause].some(value => value?.toLowerCase().includes(normalized)))
+  return cases.filter(item => [item.ticketId,item.customerName,item.customerPhoneNumber,item.transactionId,item.finding,item.rootCause].some(value => value?.toLowerCase().includes(normalized)))
+}
+
+export function filterAndSortCases(cases:CaseReport[],options:{query:string;module:string;country:string;sort:CaseSort}) {
+  const filtered=searchCases(cases,options.query).filter(item=>{
+    const category=caseCategory(item.moduleName);const module=caseModuleLabel(item.moduleName)
+    return (options.module==='All'||options.module===category||options.module===module)&&(options.country==='All'||caseCountry(item)===options.country)
+  })
+  return [...filtered].sort((a,b)=>options.sort==='oldest'?a.analysisTime.localeCompare(b.analysisTime):options.sort==='customer'?a.customerName.localeCompare(b.customerName):options.sort==='module'?caseModuleLabel(a.moduleName).localeCompare(caseModuleLabel(b.moduleName)):b.analysisTime.localeCompare(a.analysisTime))
 }
 
 type WritableFile = { createWritable():Promise<{write(data:string):Promise<void>;close():Promise<void>}> }
