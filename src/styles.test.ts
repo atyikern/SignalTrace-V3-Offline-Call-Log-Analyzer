@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import styles from './styles.css?raw'
 
-describe('SignalTrace V10 theme', () => {
+describe('SignalTrace V11 theme', () => {
   it('uses the global light operations-dashboard palette', () => {
     expect(styles).toContain('background: #f6f8fb')
     expect(styles).toContain('--panel: #ffffff')

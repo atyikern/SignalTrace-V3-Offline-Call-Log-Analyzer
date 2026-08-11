@@ -1,8 +1,10 @@
-# SignalTrace V10.6 — Voice, Messaging & Connectivity Analyzer
+# SignalTrace V11 — Voice, Messaging & Connectivity Analyzer
 
 V9 expands eFrontVoice-IVR into per-call production routing analysis. It correlates digit attempts, route-node and agent-lookup stages, booking, call-record creation, route completion, and disconnects; reports stage latency against configurable local thresholds; and keeps successful calls with recoverable delays or digit retries classified as successful with warnings. The IVR workflow accepts either `.log`/`.txt` uploads or pasted records and provides a call selector plus an expandable timestamped technical timeline.
 
-SignalTrace V10.6 is a browser-only troubleshooting view for exported SocketIO / ECONNRESET, Asterisk / FreePBX, Asterisk-IVR, RTT / UNREACHABLE, and eFrontVoice `.log` and `.txt` files. The required log-type selection ensures that only the intended deterministic analyzer runs.
+SignalTrace V11 is a browser-only troubleshooting view for exported SocketIO / ECONNRESET, Asterisk / FreePBX, Asterisk-IVR, RTT / UNREACHABLE, and eFrontVoice `.log` and `.txt` files. The required log-type selection ensures that only the intended deterministic analyzer runs.
+
+V11 adds offline case management to every analysis result. **Save Case** creates a unified JSON report containing a Section ID, module and analysis time, ticket/customer metadata, phone number, transaction ID, finding, evidence-based root cause, and recommendation. Browsers that support the File System Access API can save into a chosen `date/customer` folder; other browsers download the JSON file. **Case History** stores searchable report metadata in browser local storage so cases can be found by ticket, customer, phone, transaction ID, or root cause.
 
 The **OCOD5 WhatsApp Messaging** analyzer correlates outbound provider submissions and webhook callbacks by Message/Task ID, retains Conversation IDs, identifies inbound replies, reports Sent → Delivered → Read timing, and treats repeated callbacks as duplicates rather than failures. Friendly summaries show complete customer and business routing numbers while keeping message bodies out of the summary; matched raw records remain available only in the local expandable technical timeline. Send, delivery, and informational read thresholds are configurable in the upload workflow.
 
@@ -10,7 +12,8 @@ The **OCOD5 WhatsApp Messaging** analyzer correlates outbound provider submissio
 
 - Log contents are read with the browser `FileReader` API and retained only in React component memory.
 - There is no backend, upload API, telemetry, analytics, remote command execution, or live PBX connection.
-- Log contents are never written to local storage, IndexedDB, cookies, the filesystem, or a database.
+- Uploaded log contents are never written to local storage, IndexedDB, cookies, a database, or an external service.
+- A case report is written to a user-selected folder or browser download only after **Save Case** is submitted. Case History retains the generated report metadata in this browser's local storage; it does not retain the uploaded log.
 - Refreshing or closing the tab discards the analysis.
 
 ## Development

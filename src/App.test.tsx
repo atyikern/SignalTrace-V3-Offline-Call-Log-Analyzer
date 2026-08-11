@@ -69,9 +69,9 @@ describe('App', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Choose a supported .log or .txt file for a Voice, Messaging, or Connectivity analyzer.')
   })
 
-  it('presents the V10.6 operational scope and categorized log types', () => {
+  it('presents the V11 operational scope and categorized log types', () => {
     render(<App />)
-    expect(screen.getByRole('button', { name: 'SignalTrace home' })).toHaveTextContent('SignalTrace V10.6')
+    expect(screen.getByRole('button', { name: 'SignalTrace home' })).toHaveTextContent('SignalTrace V11')
     expect(screen.getByText('Voice, Messaging & Connectivity Analyzer')).toBeInTheDocument()
     expect(screen.getByRole('heading',{level:1})).toHaveTextContent('Diagnose voice, messaging, and connectivity issues faster.')
     expect(screen.queryByText('Supported Logs')).not.toBeInTheDocument()
@@ -83,6 +83,31 @@ describe('App', () => {
     expect(groups.map(group=>group.label)).toEqual(['Voice','Messaging','Connectivity','Others'])
     expect(groups.flatMap(group=>[...group.querySelectorAll('option')].map(option=>option.textContent))).toEqual(['eFrontVoice','eFrontVoice-IVR','Asterisk-IVR','Webhook','OCOD5 WhatsApp','SocketIO / ECONNRESET','RTT / UNREACHABLE','UI'])
     expect(within(select).getByRole('option',{name:'UI'})).toBeDisabled();fireEvent.change(select,{target:{value:'ui'}});expect(select).toHaveValue('');expect(screen.getByRole('button',{name:'Analyze'})).toBeDisabled()
+  })
+
+  it('opens Case History and returns to the analyzer', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: 'Case History' }))
+    expect(screen.getByRole('heading', { name: 'Case History' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Search Case History')).toHaveAttribute('placeholder', expect.stringContaining('Ticket ID'))
+    expect(screen.getByText('No matching cases')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Back to Analyzer' }))
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Diagnose voice, messaging, and connectivity issues faster.')
+  })
+
+  it('offers a unified Save Case form for an analysis result', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await uploadAndAnalyze(user, log, 'case.log', 'socketio-efv')
+    await user.click(await screen.findByRole('button', { name: 'Save Case' }))
+    const dialog = screen.getByRole('dialog', { name: 'Save Case' })
+    expect(within(dialog).getByPlaceholderText('IS1533')).toBeRequired()
+    expect(within(dialog).getByLabelText('Customer Name')).toBeRequired()
+    expect(within(dialog).getByLabelText('Customer Group')).toBeRequired()
+    expect(within(dialog).getByLabelText('Remarks (optional)')).not.toBeRequired()
+    await user.click(within(dialog).getByRole('button', { name: 'Cancel' }))
+    expect(screen.queryByRole('dialog', { name: 'Save Case' })).not.toBeInTheDocument()
   })
 
   it('automatically renders an Extension reachability report without an Agent', async () => {
