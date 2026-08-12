@@ -1,0 +1,7 @@
+[2026-03-14 09:42:11.001] VERBOSE[1001][C-000001a4] pbx.c: Executing [1800555019@from-internal:1] Dial("PJSIP/201-0000001a", "PJSIP/1800555019@provider")
+[2026-03-14 09:42:12.201] VERBOSE[1001][C-000001a4] app_dial.c: PJSIP/provider-0000001b is ringing
+[2026-03-14 09:42:14.551] WARNING[1001][C-000001a4] app_dial.c: Everyone is busy/congested at this time (1:0/0/1) DIALSTATUS=CHANUNAVAIL
+[2026-03-14 09:43:00.000] VERBOSE[1002][C-000001a5] pbx.c: Executing [202@from-internal:1] Dial("PJSIP/201-0000001c", "PJSIP/202")
+[2026-03-14 09:43:02.000] VERBOSE[1002][C-000001a5] app_dial.c: PJSIP/202-0000001d answered PJSIP/201-0000001c
+[2026-03-14 09:43:02.030] VERBOSE[1002][C-000001a5] bridge_channel.c: Channel PJSIP/202-0000001d joined 'simple_bridge' basic-bridge <synthetic>
+[2026-03-14 09:44:00.000] NOTICE[999] res_pjsip.c: unrelated global message without a call identifier
