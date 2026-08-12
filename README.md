@@ -1,8 +1,8 @@
-# SignalTrace V11.5 — Voice, Messaging & Connectivity Analyzer
+# SignalTrace V12 — Voice, Messaging & Connectivity Analyzer
 
 V9 expands eFrontVoice-IVR into per-call production routing analysis. It correlates digit attempts, route-node and agent-lookup stages, booking, call-record creation, route completion, and disconnects; reports stage latency against configurable local thresholds; and keeps successful calls with recoverable delays or digit retries classified as successful with warnings. The IVR workflow accepts either `.log`/`.txt` uploads or pasted records and provides a call selector plus an expandable timestamped technical timeline.
 
-SignalTrace V11.5 is a browser-only troubleshooting view for exported SocketIO / ECONNRESET, Asterisk / FreePBX, Asterisk-IVR, RTT / UNREACHABLE, and eFrontVoice `.log` and `.txt` files. The required log-type selection ensures that only the intended deterministic analyzer runs.
+SignalTrace V12 is a browser-only troubleshooting view for exported SocketIO / ECONNRESET, Asterisk / FreePBX, Asterisk-IVR, RTT / UNREACHABLE, and eFrontVoice `.log` and `.txt` files. The required log-type selection ensures that only the intended deterministic analyzer runs.
 
 V11 adds offline case management to every analysis result. **Save Case** creates a unified JSON report containing a Section ID, module and analysis time, ticket/customer metadata, phone number, transaction ID, finding, evidence-based root cause, and recommendation. Browsers that support the File System Access API can save into a chosen `date/customer` folder; other browsers download the JSON file. **Case History** stores searchable report metadata in browser local storage so cases can be found by ticket, customer, phone, transaction ID, or root cause.
 
@@ -20,14 +20,80 @@ The **OCOD5 WhatsApp Messaging** analyzer correlates outbound provider submissio
 - A case report is written to a user-selected folder or browser download only after **Save Case** is submitted. Case History retains the generated report metadata in this browser's local storage; it does not retain the uploaded log.
 - Refreshing or closing the tab discards the analysis.
 
-## Development
+## Windows development and TraceDesk URL
 
-Requires a current Node.js LTS release.
+### One-time setup
+
+Install a current Node.js LTS release, clone this repository, and install its packages:
 
 ```bash
 npm install
+```
+
+Install Caddy from a Windows PowerShell prompt:
+
+```powershell
+winget install CaddyServer.Caddy
+caddy version
+```
+
+Open a new terminal after installation so the updated `PATH` is available. The start script reports the same installation command if it cannot find Caddy.
+
+You can validate the repository proxy configuration at any time:
+
+```powershell
+caddy validate --config .\Caddyfile --adapter caddyfile
+```
+
+`tracedesk.localhost` uses the standards-reserved `.localhost` suffix. Current browsers normally resolve it to the loopback interface automatically, so **do not edit the hosts file initially**. To check on the target Windows computer, open `http://tracedesk.localhost` after starting TraceDesk. If that browser genuinely cannot resolve it, run the following from PowerShell:
+
+```powershell
+Resolve-DnsName tracedesk.localhost
+```
+
+Only when resolution fails, open Notepad as Administrator, edit `C:\Windows\System32\drivers\etc\hosts`, and add:
+
+```text
+127.0.0.1 tracedesk.localhost
+```
+
+### Start and stop
+
+Start Vite on its original internal port `5173` and Caddy on HTTP port `80`:
+
+```powershell
+npm run dev:tracedesk
+```
+
+Then open [http://tracedesk.localhost](http://tracedesk.localhost). Caddy forwards normal HTTP and Vite hot-module-reload WebSocket traffic to `127.0.0.1:5173`. Automatic HTTPS is explicitly disabled for this local hostname. Direct development access remains available at [http://localhost:5173](http://localhost:5173).
+
+Stop both process trees safely using the PIDs recorded by the start script:
+
+```powershell
+npm run stop:tracedesk
+```
+
+Run the start command again after restarting Windows; no service or automatic startup entry is installed. Normally a standard PowerShell window is sufficient. If Windows refuses permission to bind port `80`, rerun PowerShell **as Administrator**. Administrator privileges are also required if a hosts-file entry is necessary.
+
+The original Vite-only workflow remains available and does not require Caddy or port `80`:
+
+```powershell
 npm run dev
 ```
+
+### Port-conflict troubleshooting
+
+The TraceDesk start script checks ports `80` and `5173` before launching anything. If either is occupied, inspect the listener:
+
+```powershell
+Get-NetTCPConnection -State Listen -LocalPort 80,5173 |
+  Select-Object LocalAddress, LocalPort, OwningProcess
+Get-Process -Id <OwningProcess>
+```
+
+Stop the conflicting application if appropriate, or stop an earlier TraceDesk session with `npm run stop:tracedesk`. Runtime logs and PID state are placed in the ignored `.tracedesk` directory. If a previous process was terminated externally and only stale state remains, confirm neither port is listening, remove `.tracedesk\processes.json`, and start again.
+
+## Quality checks
 
 Quality checks:
 

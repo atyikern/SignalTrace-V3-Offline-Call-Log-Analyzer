@@ -70,9 +70,9 @@ describe('App', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Choose a supported .log or .txt file for a Voice, Messaging, or Connectivity analyzer.')
   })
 
-  it('presents the V11.5 operational scope and categorized log types', () => {
+  it('presents the V12 operational scope and categorized log types', () => {
     render(<App />)
-    expect(screen.getByRole('button', { name: 'SignalTrace home' })).toHaveTextContent('SignalTrace V11.5')
+    expect(screen.getByRole('button', { name: 'SignalTrace home' })).toHaveTextContent('SignalTrace V12')
     expect(screen.getByText('Voice, Messaging & Connectivity Analyzer')).toBeInTheDocument()
     expect(screen.getByRole('heading',{level:1})).toHaveTextContent('Diagnose voice, messaging, and connectivity issues faster.')
     expect(screen.queryByText('Supported Logs')).not.toBeInTheDocument()
