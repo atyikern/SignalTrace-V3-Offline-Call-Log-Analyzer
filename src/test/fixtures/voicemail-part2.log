@@ -1,0 +1,2 @@
+[2026-08-14 13:18:52] VERBOSE[4100][C-000aec23] app_voicemail.c: User hung up on PJSIP/provider-0001
+[2026-08-14 13:18:52] WARNING[4100][C-000aec23] app_voicemail.c: Recording was 0 seconds long but needs to be at least 1 - abandoning
