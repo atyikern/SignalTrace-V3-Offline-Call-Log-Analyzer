@@ -7,6 +7,8 @@ import asteriskIvrFixture from './test/fixtures/asterisk-ivr.log?raw'
 import voiceFixture from './test/fixtures/voice-routing.log?raw'
 import ivrFixture from './test/fixtures/ivr-call-flow.log?raw'
 import whatsappFixture from './test/fixtures/ocod5-whatsapp.log?raw'
+import voicemailPart1 from './test/fixtures/voicemail-part1.log?raw'
+import voicemailPart2 from './test/fixtures/voicemail-part2.log?raw'
 
 const log = `Agent: kumaresan Agent ID: 604 Extension: 8041
 [2026-03-14 14:51:49] ECONNRESET EFV DESTROY
@@ -15,7 +17,7 @@ Agent: amina Agent ID: 605 Extension: 8042
 [2026-03-14 11:02:01] Broken pipe`
 
 
-async function uploadAndAnalyze(user: ReturnType<typeof userEvent.setup>, contents: string, name: string, type: 'socketio-efv'|'pjsip-rtt'|'efrontvoice-ivr'|'efrontvoice'|'asterisk-ivr'|'opscentral-webhook'|'ocod5-whatsapp') {
+async function uploadAndAnalyze(user: ReturnType<typeof userEvent.setup>, contents: string, name: string, type: 'socketio-efv'|'pjsip-rtt'|'efrontvoice-ivr'|'efrontvoice'|'asterisk-ivr'|'asterisk-voicemail'|'opscentral-webhook'|'ocod5-whatsapp') {
   await user.selectOptions(screen.getByLabelText('Log Type'), type)
   await user.upload(screen.getByLabelText('Choose log'), new File([contents], name, { type: 'text/plain' }))
   await user.click(screen.getByRole('button', { name: 'Analyze' }))
@@ -82,7 +84,7 @@ describe('App', () => {
     const select=screen.getByLabelText('Log Type')
     const groups=[...select.querySelectorAll('optgroup')]
     expect(groups.map(group=>group.label)).toEqual(['Voice','Messaging','Connectivity','Others'])
-    expect(groups.flatMap(group=>[...group.querySelectorAll('option')].map(option=>option.textContent))).toEqual(['eFrontVoice','eFrontVoice-IVR','Asterisk-IVR','Webhook','OCOD5 WhatsApp','SocketIO / ECONNRESET','RTT / UNREACHABLE','UI'])
+    expect(groups.flatMap(group=>[...group.querySelectorAll('option')].map(option=>option.textContent))).toEqual(['eFrontVoice','eFrontVoice-IVR','Asterisk-IVR','Asterisk/PBX Voicemail Analysis','Webhook','OCOD5 WhatsApp','SocketIO / ECONNRESET','RTT / UNREACHABLE','UI'])
     expect(within(select).getByRole('option',{name:'UI'})).toBeDisabled();fireEvent.change(select,{target:{value:'ui'}});expect(select).toHaveValue('');expect(screen.getByRole('button',{name:'Analyze'})).toBeDisabled()
   })
 
@@ -242,6 +244,10 @@ describe('App', () => {
     await user.selectOptions(selector,'process:92')
     expect(screen.getAllByText('Successfully Transferred').length).toBeGreaterThan(0)
     expect(screen.getByText('11 sec')).toBeInTheDocument()
+  })
+
+  it('combines multiple PBX files for one selected voicemail call',async()=>{
+    const user=userEvent.setup();render(<App/>);await user.selectOptions(screen.getByLabelText('Log Type'),'asterisk-voicemail');const input=screen.getByLabelText('Choose log');expect(input).toHaveAttribute('multiple');await user.upload(input,[new File([voicemailPart1],'full.log',{type:'text/plain'}),new File([voicemailPart2],'messages.log',{type:'text/plain'})]);expect(screen.getByRole('button',{name:/2 log files selected/})).toBeInTheDocument();await user.click(screen.getByRole('button',{name:'Analyze'}));expect(await screen.findByText('Voicemail outcome analysis')).toBeInTheDocument();expect(screen.getByLabelText('Selected Voicemail Call')).toHaveValue('C-000aec23');expect(screen.getAllByText('No voicemail saved').length).toBeGreaterThan(0);expect(screen.getByText('Caller or upstream channel disconnected during voicemail recording')).toBeInTheDocument();expect(screen.getByText('22655001@default')).toBeInTheDocument();expect(screen.getByText('Download Report')).toBeInTheDocument();expect(screen.getByText(/Asterisk abandoned the voicemail recording/)).toBeInTheDocument();expect(document.body).toHaveTextContent('Recording was 0 seconds long but needs to be at least 1 - abandoning')
   })
 
   it('renders the OpsCentral Webhook messaging-flow report and filters internally', async () => {

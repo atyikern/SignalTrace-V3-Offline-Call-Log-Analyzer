@@ -38,6 +38,7 @@ export function caseModuleLabel(moduleName:string) {
   if (/econnreset|socketio/i.test(moduleName)) return 'ECONNRESET'
   if (/efrontvoice-ivr/i.test(moduleName)) return 'eFrontVoice-IVR'
   if (/efrontvoice/i.test(moduleName)) return 'eFrontVoice'
+  if (/voicemail/i.test(moduleName)) return 'Asterisk/PBX Voicemail'
   if (/asterisk/i.test(moduleName)) return 'Asterisk-IVR'
   if (/webhook/i.test(moduleName)) return 'Webhook'
   return moduleName

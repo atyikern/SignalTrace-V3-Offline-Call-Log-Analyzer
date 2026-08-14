@@ -1,4 +1,4 @@
-import type { AgentAnalysis, AsteriskIvrCall, ExtensionNetworkAnalysis, IvrCall, VoiceCall, VoiceExtensionAnalysis, WebhookTransaction, WhatsappMessageAnalysis } from './types'
+import type { AgentAnalysis, AsteriskIvrCall, ExtensionNetworkAnalysis, IvrCall, VoiceCall, VoiceExtensionAnalysis, VoicemailCallAnalysis, WebhookTransaction, WhatsappMessageAnalysis } from './types'
 
 export interface ResultField { label:string; value:string|number }
 export interface ResultTimelineItem { timestamp?:string; title:string; raw?:string; sortTime?:number; lineNumber?:number }
@@ -61,6 +61,10 @@ export function normalizeAsterisk(call:AsteriskIvrCall,calls:AsteriskIvrCall[]):
   const successful=calls.filter(item=>item.routingResult==='Successfully Answered'||item.routingResult==='Successfully Transferred').length
   return {moduleName:'Asterisk-IVR Call Routing',title:'Selected call routing analysis',finalStatus:call.routingResult,
     summary:fields(field('Total Calls',calls.length),field('Successfully Answered',successful),field('Ring Duration',call.ringDurationSeconds===undefined?undefined:`${call.ringDurationSeconds} sec`)),technicalDetails:fields(field('Customer Phone Number',call.callerId),field('DNIS',call.dnis),field('Agent Extension',call.agentExtension),field('Process ID',call.processId),field('Linked ID',call.linkedId),field('Unique ID',call.uniqueId),field('Source Channel',call.sourceChannel),field('Destination Channel',call.destinationChannel),field('Dial Status',call.dialStatus)),timeline:ordered(call.events.map(event=>({timestamp:event.timestamp,title:event.label,raw:event.rawLine,sortTime:event.epochMs,lineNumber:event.lineNumber}))),finding:call.finding,rootCause:call.routingResult,recommendations:call.recommendedActions.length?call.recommendedActions:['No corrective routing action is recommended from this call result.']}
+}
+
+export function normalizeVoicemail(call:VoicemailCallAnalysis):NormalizedAnalysisResult {
+  return {moduleName:'Asterisk/PBX Voicemail Analysis',title:'Voicemail outcome analysis',finalStatus:call.outcome,statusProgression:call.events.map(event=>event.label),summary:fields(field('Analysis Status',call.outcome),field('Voicemail Outcome',call.outcome),field('Classification',call.classification),field('Confidence Level',call.confidence),field('Recording Duration',call.recordingDurationSeconds===undefined?undefined:`${call.recordingDurationSeconds} seconds`)),technicalDetails:fields(field('Call ID',call.callId),field('Caller Number',call.callerNumber),field('Called Number',call.calledNumber),field('Mailbox',call.mailbox?`${call.mailbox}@${call.context??'default'}`:undefined),field('Channels',call.channels.join(', '))),timeline:ordered(call.events.map(event=>({timestamp:event.timestamp,title:event.label,raw:event.rawLine,sortTime:event.epochMs,lineNumber:event.lineNumber}))),finding:call.finding,rootCause:call.rootCause,recommendations:call.recommendedActions}
 }
 
 export function normalizeExtension(analysis:ExtensionNetworkAnalysis):NormalizedAnalysisResult {

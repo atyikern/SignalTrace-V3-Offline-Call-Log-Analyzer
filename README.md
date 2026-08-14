@@ -12,6 +12,8 @@ V11.5 standardizes every analyzer result through a shared presentation schema an
 
 The **OCOD5 WhatsApp Messaging** analyzer correlates outbound provider submissions and webhook callbacks by Message/Task ID, retains Conversation IDs, identifies inbound replies, reports Sent → Delivered → Read timing, and treats repeated callbacks as duplicates rather than failures. Friendly summaries show complete customer and business routing numbers while keeping message bodies out of the summary; matched raw records remain available only in the local expandable technical timeline. Send, delivery, and informational read thresholds are configurable in the upload workflow.
 
+The **Asterisk/PBX Voicemail Analysis** module accepts one or multiple `.log`/`.txt` files for the same investigation. It keeps different Asterisk call IDs isolated, correlates PJSIP/SIP and Local channels, reconstructs voicemail greeting, beep, recording, disconnect, duration, abandon/save, mailbox, and storage events, and explains why a message was not persisted. Its standardized result includes exact supporting lines, confidence, operational commands, and a downloadable JSON report.
+
 ## Privacy and security model
 
 - Log contents are read with the browser `FileReader` API and retained only in React component memory.

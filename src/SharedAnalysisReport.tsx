@@ -3,10 +3,14 @@ import type { NormalizedAnalysisResult } from './normalizedResults'
 
 const timeOnly=(value?:string)=>value?.match(/\d{2}:\d{2}:\d{2}/)?.[0]??'Unknown time'
 
-export function SharedAnalysisReport({result,controls}:{result:NormalizedAnalysisResult;controls?:ReactNode}) {
+export function downloadAnalysisReport(result:NormalizedAnalysisResult,fileName='signaltrace-analysis.json') {
+  const url=URL.createObjectURL(new Blob([JSON.stringify(result,null,2)],{type:'application/json'}));const anchor=document.createElement('a');anchor.href=url;anchor.download=fileName;anchor.click();URL.revokeObjectURL(url)
+}
+
+export function SharedAnalysisReport({result,controls,downloadFileName}:{result:NormalizedAnalysisResult;controls?:ReactNode;downloadFileName?:string}) {
   const progression=result.statusProgression?.filter((value,index,array)=>value&&value!==array[index-1])??[]
   return <article className="network-report shared-analysis-report whatsapp-report">
-    <header className="report-header"><div><span className="kicker"><span/>{result.moduleName}</span><h2>{result.title}</h2></div></header>
+    <header className="report-header"><div><span className="kicker"><span/>{result.moduleName}</span><h2>{result.title}</h2></div>{downloadFileName&&<button className="secondary-button" onClick={()=>downloadAnalysisReport(result,downloadFileName)}>Download Report</button>}</header>
     {controls}
     <section className="ivr-outcome analysis-summary"><span>Final Status</span><strong>{result.finalStatus}</strong>{progression.length>0&&<p><b>Status Progression:</b> {progression.join(' → ')}</p>}{result.duplicateEvents!==undefined&&<p><b>Duplicate callbacks/events:</b> {result.duplicateEvents}</p>}</section>
     {result.summary.length>0&&<section className="metric-row shared-summary-metrics">{result.summary.map(item=><div key={item.label}><span>{item.label}</span><b>{item.value}</b></div>)}</section>}

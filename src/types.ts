@@ -1,5 +1,5 @@
 export type NetworkSeverity = 'critical' | 'important' | 'media-quality'
-export type LogType = 'socketio-efv' | 'pjsip-rtt' | 'efrontvoice-ivr' | 'efrontvoice' | 'asterisk-ivr' | 'opscentral-webhook' | 'ocod5-whatsapp'
+export type LogType = 'socketio-efv' | 'pjsip-rtt' | 'efrontvoice-ivr' | 'efrontvoice' | 'asterisk-ivr' | 'asterisk-voicemail' | 'opscentral-webhook' | 'ocod5-whatsapp'
 
 /** Retained internally for diagnostics and tests; never rendered in the normal UI. */
 export interface SourceReference {
@@ -45,7 +45,13 @@ export interface AnalysisResult {
   asteriskIvrCalls: AsteriskIvrCall[]
   webhookTransactions: WebhookTransaction[]
   whatsappMessages: WhatsappMessageAnalysis[]
+  voicemailCalls: VoicemailCallAnalysis[]
 }
+
+export type VoicemailOutcome='No voicemail saved'|'Voicemail saved successfully'|'Mailbox configuration problem'|'Storage or permission problem'|'Voicemail application error'|'Inconclusive'
+export type VoicemailClassification='Caller hung up before recording'|'Caller or upstream channel disconnected during voicemail recording'|'Recording too short and abandoned'|'Valid voicemail saved successfully'|'Mailbox unavailable or not configured'|'File permission or storage problem'|'Voicemail application error'|'Unknown cause due to incomplete logs'
+export interface VoicemailEvent { timestamp?:string;epochMs?:number;lineNumber:number;type:'ROUTED'|'GREETING'|'BEEP'|'RECORDING_STARTED'|'DISCONNECTED'|'DURATION'|'ABANDONED'|'SAVED'|'MAILBOX_ERROR'|'STORAGE_ERROR'|'APPLICATION_ERROR';label:string;rawLine:string }
+export interface VoicemailCallAnalysis { key:string;callId?:string;callerNumber?:string;calledNumber?:string;mailbox?:string;context?:string;channels:string[];outcome:VoicemailOutcome;classification:VoicemailClassification;confidence:'High'|'Medium'|'Low';recordingDurationSeconds?:number;minimumDurationSeconds?:number;events:VoicemailEvent[];finding:string;rootCause:string;recommendedActions:string[];problemScore:number }
 
 
 export type VoiceEventType = 'CALL_CREATED'|'AGENT_SEARCH'|'AGENT_BOOKED'|'ROUTE_TO_AGENT'|'AGENT_RINGING'|'CALL_CONNECTED'|'CALL_DISCONNECTED'|'CALL_HOLD'|'ERROR'

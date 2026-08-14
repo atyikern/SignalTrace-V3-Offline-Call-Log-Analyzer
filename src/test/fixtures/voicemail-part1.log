@@ -1,0 +1,4 @@
+[2026-08-14 13:18:51] VERBOSE[4100][C-000aec23] pbx.c: Executing [22655001@default:1] VoiceMail("PJSIP/provider-0001", "22655001@default,su")
+[2026-08-14 13:18:51] VERBOSE[4100][C-000aec23] file.c: Playing 'unavail.slin' (language 'en')
+[2026-08-14 13:18:51] VERBOSE[4100][C-000aec23] file.c: Playing 'beep.slin' (language 'en')
+[2026-08-14 13:18:52] VERBOSE[4100][C-000aec23] app_voicemail.c: Recording the message
