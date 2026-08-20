@@ -1,5 +1,5 @@
 export type NetworkSeverity = 'critical' | 'important' | 'media-quality'
-export type LogType = 'socketio-efv' | 'pjsip-rtt' | 'efrontvoice-ivr' | 'efrontvoice' | 'asterisk-ivr' | 'asterisk-voicemail' | 'opscentral-webhook' | 'ocod5-whatsapp'
+export type LogType = 'socketio-efv' | 'pjsip-rtt' | 'efrontvoice-ivr' | 'efrontvoice' | 'asterisk-ivr' | 'asterisk-voicemail' | 'opscentral-webhook' | 'ocod5-whatsapp' | 'routing-delay'
 
 /** Retained internally for diagnostics and tests; never rendered in the normal UI. */
 export interface SourceReference {
@@ -46,6 +46,7 @@ export interface AnalysisResult {
   webhookTransactions: WebhookTransaction[]
   whatsappMessages: WhatsappMessageAnalysis[]
   voicemailCalls: VoicemailCallAnalysis[]
+  routingDelayAnalyses: RoutingDelayAnalysis[]
 }
 
 export type VoicemailOutcome='No voicemail saved'|'Voicemail saved successfully'|'Mailbox configuration problem'|'Storage or permission problem'|'Voicemail application error'|'Inconclusive'
@@ -119,6 +120,36 @@ export interface AsteriskIvrCall { key:string; processId?:string; callerId?:stri
 export type AgentRoutingStatus = 'Client Started'|'Searching for Available Agent'|'Agent Found'|'Agent Found After Retry'|'No Available Agent'|'CallFront Connection Interrupted'|'Client Stopped'|'Incomplete Agent Routing'
 export interface AgentRoutingEvent { timestamp?:string; timestampMs?:number; type:'CLIENT_STARTED'|'AGENT_SEARCH'|'AGENT_RESPONSE'|'CONNECTION_INTERRUPTED'|'CLIENT_STOPPED'|'PROCESSING_VALUE'; label:string }
 export interface AgentRoutingAnalysis { customerNumber?:string; webSocketSession?:string; routingEntryId?:string; clientStartTime?:string; agentSearchTime?:string; agentResponseTime?:string; agentLookupDelayMs?:number; selectedAgentId?:number; lookupAttempts:number; responseAgentIds:number[]; preferredLanguage?:boolean; defaultLanguage?:boolean; preferredProduct?:boolean; defaultProduct?:boolean; finalStatus:AgentRoutingStatus; connectionWarning?:string; disconnectionCount:number; processingValue?:number; maximumProcessingValue?:number; usagePercentage?:number; rawGetAvailableAgentParameters?:string; events:AgentRoutingEvent[]; finding:string }
+
+
+export type RoutingDelayStatus = 'Normal'|'Minor Routing Wait'|'Routing Delay'|'Extended Routing Delay'|'Incomplete'
+export interface RoutingDelayResponse { responseId:number; timestamp?:string; timestampMs?:number; latencyMs?:number; preferredLanguage?:boolean; defaultLanguage?:boolean; preferredProduct?:boolean; defaultProduct?:boolean; routingEntryId?:string }
+export interface RoutingDelayAttempt { routingEntryId?:string; timestamp?:string; timestampMs?:number; response?:RoutingDelayResponse }
+export interface RoutingDelayAnalysis {
+  customerNumber?:string
+  webSocketSession?:string
+  routingStart?:string
+  routingEnd?:string
+  totalRoutingWaitMs?:number
+  lookupAttempts:number
+  averageRetryIntervalMs?:number
+  minimumRetryIntervalMs?:number
+  maximumRetryIntervalMs?:number
+  averageResponseLatencyMs?:number
+  minimumResponseLatencyMs?:number
+  maximumResponseLatencyMs?:number
+  repeatedResponseId?:number
+  finalResponseId?:number
+  responseStateChanged:boolean
+  routingEntryIds:string[]
+  disconnectionCount:number
+  status:RoutingDelayStatus
+  finding:string
+  rootCauseAssessment:string
+  attempts:RoutingDelayAttempt[]
+  responses:RoutingDelayResponse[]
+  events:AgentRoutingEvent[]
+}
 
 export type WebhookStatus = 'Successfully Routed'|'Blacklisted'|'Outside Operation Hours'|'Invalid Selection'|'Timeout'|'Processing Error'|'Incomplete / Unknown'
 export interface WebhookEvidence { timestamp?:string; timestampMs?:number; lineNumber:number; label:string; maskedRecord:string }

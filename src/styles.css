@@ -198,3 +198,9 @@ footer { border-top: 1px solid var(--border); }
 @media (max-width: 1050px) { .case-filter-panel { grid-template-columns: repeat(2,minmax(0,1fr)); }.case-history-list { grid-template-columns: repeat(2,minmax(0,1fr)); } }
 @media (max-width: 720px) { .case-stats { grid-template-columns: repeat(2,1fr); }.case-filter-panel,.case-history-list { grid-template-columns: 1fr; }.case-history-heading { flex-direction: column; }.case-history-heading .secondary-button { width: 100%; justify-content: center; }.case-detail-findings { grid-template-columns: 1fr; }.header-actions { gap: 7px; }.history-button { font-size: 0; padding: 9px; }.history-button svg { width: 18px; height: 18px; }.case-pagination label { width: 100%; justify-content: center; margin: 8px 0 0; } }
 @media (max-width: 520px) { .case-history-page { padding: 32px 18px 60px; }.case-modal { padding: 22px 18px; }.case-actions { flex-direction: column-reverse; }.case-actions button { width: 100%; justify-content: center; }.case-history-list dl > div,.case-detail-list { grid-template-columns: 1fr; gap: 4px; }.case-history-list dd { margin-bottom: 7px; } }
+
+
+/* SignalTrace V13 — Messaging Routing Delay module */
+.upload-workflow .agent-selector select option[value="routing-delay"] {
+  font-weight: 700;
+}

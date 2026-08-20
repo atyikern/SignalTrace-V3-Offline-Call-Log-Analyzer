@@ -1,4 +1,4 @@
-import type { AgentAnalysis, AsteriskIvrCall, ExtensionNetworkAnalysis, IvrCall, VoiceCall, VoiceExtensionAnalysis, VoicemailCallAnalysis, WebhookTransaction, WhatsappMessageAnalysis } from './types'
+import type { AgentAnalysis, AsteriskIvrCall, ExtensionNetworkAnalysis, IvrCall, RoutingDelayAnalysis, VoiceCall, VoiceExtensionAnalysis, VoicemailCallAnalysis, WebhookTransaction, WhatsappMessageAnalysis } from './types'
 
 export interface ResultField { label:string; value:string|number }
 export interface ResultTimelineItem { timestamp?:string; title:string; raw?:string; sortTime?:number; lineNumber?:number }
@@ -76,3 +76,53 @@ export function normalizeAgent(analysis:AgentAnalysis):NormalizedAnalysisResult 
   const events=analysis.problemTimes.map(problem=>({timestamp:problem.timestamp,title:problem.indicators.map(indicator=>`${indicator.label} · ${indicator.severity}`).join(' · '),raw:[...new Set(problem.indicators.map(indicator=>indicator.source.text))].join('\n'),lineNumber:problem.indicators[0]?.source.lineNumber}))
   return {moduleName:'SocketIO / ECONNRESET',title:'Agent network report',finalStatus:analysis.networkStatus,statusProgression:events.map(event=>event.title),summary:[],technicalDetails:fields(field('Agent',analysis.agent),field('Agent ID',analysis.agentId),field('Extension',analysis.extension),field('Session ID',analysis.problemTimes.flatMap(item=>item.indicators).find(item=>item.sessionId)?.sessionId)),timeline:events,finding:analysis.finding,rootCause:analysis.conclusion,recommendations:[analysis.possibleImpact]}
 }
+
+
+export function normalizeRoutingDelay(analysis:RoutingDelayAnalysis):NormalizedAnalysisResult {
+  const retryRange=analysis.minimumRetryIntervalMs===undefined&&analysis.maximumRetryIntervalMs===undefined
+    ? undefined
+    : `${duration(analysis.minimumRetryIntervalMs)??'Unknown'} → ${duration(analysis.maximumRetryIntervalMs)??'Unknown'}`
+  const latencyRange=analysis.minimumResponseLatencyMs===undefined&&analysis.maximumResponseLatencyMs===undefined
+    ? undefined
+    : `${duration(analysis.minimumResponseLatencyMs)??'Unknown'} → ${duration(analysis.maximumResponseLatencyMs)??'Unknown'}`
+  return {
+    moduleName:'Messaging Routing Delay · V13',
+    title:'Available-agent routing delay analysis',
+    finalStatus:analysis.status,
+    statusProgression:analysis.responses.map(item=>String(item.responseId)),
+    summary:fields(
+      field('Total Routing Wait',duration(analysis.totalRoutingWaitMs)),
+      field('GETAVAILAGT Attempts',analysis.lookupAttempts),
+      field('Average Retry Interval',duration(analysis.averageRetryIntervalMs)),
+      field('Retry Interval Range',retryRange),
+      field('Average Response Latency',duration(analysis.averageResponseLatencyMs)),
+      field('Response Latency Range',latencyRange),
+      field('Repeated Response ID',analysis.repeatedResponseId),
+      field('Final Response ID',analysis.finalResponseId)
+    ),
+    technicalDetails:fields(
+      field('Customer Phone Number',analysis.customerNumber),
+      field('WebSocket Session',analysis.webSocketSession),
+      field('Routing Start',analysis.routingStart),
+      field('Routing End',analysis.routingEnd),
+      field('Response State Changed',analysis.responseStateChanged?'Yes':'No'),
+      field('RoutingEntry Count',analysis.routingEntryIds.length),
+      field('RoutingEntry IDs',analysis.routingEntryIds.join(', ')),
+      field('Disconnection Count',analysis.disconnectionCount)
+    ),
+    timeline:ordered(analysis.events.map((event,index)=>({
+      timestamp:event.timestamp,
+      title:event.label,
+      sortTime:event.timestampMs,
+      lineNumber:index+1
+    }))),
+    finding:analysis.finding,
+    rootCause:analysis.rootCauseAssessment,
+    recommendations:[
+      'Review agent availability and routing eligibility during the detected wait period.',
+      'Correlate the final response-state change with agent login, skillset, campaign, and routing configuration when deeper confirmation is required.',
+      'Do not infer the semantic meaning of numeric response IDs unless the CallFront response-code mapping is available.'
+    ]
+  }
+}
+
