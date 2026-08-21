@@ -26,6 +26,7 @@ export type CaseCategory = 'Voice'|'Messaging'|'Connectivity'|'Other'
 export type CaseSort = 'newest'|'oldest'|'customer'|'module'
 
 export function caseCategory(moduleName:string):CaseCategory {
+  if (/messaging license occupancy/i.test(moduleName)) return 'Connectivity'
   if (/whatsapp|webhook|messaging/i.test(moduleName)) return 'Messaging'
   if (/rtt|unreachable|econnreset|socketio|connectivity/i.test(moduleName)) return 'Connectivity'
   if (/efrontvoice|asterisk|ivr|voice/i.test(moduleName)) return 'Voice'
@@ -33,6 +34,7 @@ export function caseCategory(moduleName:string):CaseCategory {
 }
 
 export function caseModuleLabel(moduleName:string) {
+  if (/messaging license occupancy/i.test(moduleName)) return 'Messaging License Occupancy'
   if (/whatsapp/i.test(moduleName)) return 'WhatsApp'
   if (/rtt|unreachable/i.test(moduleName)) return 'RTT / Unreachable'
   if (/econnreset|socketio/i.test(moduleName)) return 'ECONNRESET'

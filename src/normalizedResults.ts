@@ -1,12 +1,21 @@
-import type { AgentAnalysis, AsteriskIvrCall, ExtensionNetworkAnalysis, IvrCall, RoutingDelayAnalysis, VoiceCall, VoiceExtensionAnalysis, VoicemailCallAnalysis, WebhookTransaction, WhatsappMessageAnalysis } from './types'
+import { moduleReferenceFor } from './types'
+import type { AgentAnalysis, AsteriskIvrCall, ExtensionNetworkAnalysis, IvrCall, LicenseOccupancyAnalysis, RoutingDelayAnalysis, VoiceCall, VoiceExtensionAnalysis, VoicemailCallAnalysis, WebhookTransaction, WhatsappMessageAnalysis } from './types'
 
 export interface ResultField { label:string; value:string|number }
 export interface ResultTimelineItem { timestamp?:string; title:string; raw?:string; sortTime?:number; lineNumber?:number }
+export interface ResultTable {
+  title:string
+  description?:string
+  columns:string[]
+  rows:Array<Array<string|number>>
+}
 export interface NormalizedAnalysisResult {
   moduleName:string
   title:string
   finalStatus:string
   statusProgression?:string[]
+  statusBreakdown?:ResultField[]
+  tables?:ResultTable[]
   duplicateEvents?:number
   summary:ResultField[]
   technicalDetails:ResultField[]
@@ -85,27 +94,43 @@ export function normalizeRoutingDelay(analysis:RoutingDelayAnalysis):NormalizedA
   const latencyRange=analysis.minimumResponseLatencyMs===undefined&&analysis.maximumResponseLatencyMs===undefined
     ? undefined
     : `${duration(analysis.minimumResponseLatencyMs)??'Unknown'} → ${duration(analysis.maximumResponseLatencyMs)??'Unknown'}`
+  const agentMeaning=(agentId?:number)=>agentId===undefined?undefined:agentId===-1?'No Available Agent':`Agent ${agentId}`
+  const match=(value?:boolean)=>value===undefined?undefined:value?'Matched':'Not matched'
+
   return {
     moduleName:'Messaging Routing Delay · V13',
     title:'Available-agent routing delay analysis',
-    finalStatus:analysis.status,
-    statusProgression:analysis.responses.map(item=>String(item.responseId)),
+    finalStatus:`${analysis.status} · ${analysis.routingOutcome}`,
+    statusProgression:analysis.responses.map(item=>item.responseId===-1?'No Available Agent':`Agent ${item.responseId} Found`),
     summary:fields(
+      field('Routing Session Duration',duration(analysis.routingSessionDurationMs)),
+      field('Agent Search Duration',duration(analysis.agentSearchDurationMs)),
       field('Total Routing Wait',duration(analysis.totalRoutingWaitMs)),
       field('GETAVAILAGT Attempts',analysis.lookupAttempts),
+      field('No-Agent Responses',analysis.noAvailableAgentResponses),
+      field('Selected Agent',agentMeaning(analysis.selectedAgentId)),
       field('Average Retry Interval',duration(analysis.averageRetryIntervalMs)),
       field('Retry Interval Range',retryRange),
       field('Average Response Latency',duration(analysis.averageResponseLatencyMs)),
       field('Response Latency Range',latencyRange),
-      field('Repeated Response ID',analysis.repeatedResponseId),
-      field('Final Response ID',analysis.finalResponseId)
+      field('Repeated Agent Result',agentMeaning(analysis.repeatedResponseId)),
+      field('Final Agent Result',agentMeaning(analysis.finalResponseId))
     ),
     technicalDetails:fields(
       field('Customer Phone Number',analysis.customerNumber),
       field('WebSocket Session',analysis.webSocketSession),
-      field('Routing Start',analysis.routingStart),
-      field('Routing End',analysis.routingEnd),
-      field('Response State Changed',analysis.responseStateChanged?'Yes':'No'),
+      field('Routing Session Start',analysis.clientStartTime),
+      field('Routing Session End',analysis.clientStopTime),
+      field('Agent Search Start',analysis.agentSearchStart),
+      field('Agent Search End',analysis.agentSearchEnd),
+      field('Agent Result Changed',analysis.responseStateChanged?'Yes':'No'),
+      field('Preferred Language',match(analysis.preferredLanguage)),
+      field('Default Language',match(analysis.defaultLanguage)),
+      field('Preferred Product',match(analysis.preferredProduct)),
+      field('Default Product',match(analysis.defaultProduct)),
+      field('Routing Processing Value',analysis.processingValue),
+      field('Maximum Routing Processing Value',analysis.maximumProcessingValue),
+      field('Routing Processing Usage',analysis.usagePercentage===undefined?undefined:`${analysis.usagePercentage.toFixed(2)}%`),
       field('RoutingEntry Count',analysis.routingEntryIds.length),
       field('RoutingEntry IDs',analysis.routingEntryIds.join(', ')),
       field('Disconnection Count',analysis.disconnectionCount)
@@ -119,10 +144,97 @@ export function normalizeRoutingDelay(analysis:RoutingDelayAnalysis):NormalizedA
     finding:analysis.finding,
     rootCause:analysis.rootCauseAssessment,
     recommendations:[
-      'Review agent availability and routing eligibility during the detected wait period.',
-      'Correlate the final response-state change with agent login, skillset, campaign, and routing configuration when deeper confirmation is required.',
-      'Do not infer the semantic meaning of numeric response IDs unless the CallFront response-code mapping is available.'
+      analysis.routingOutcome==='No Available Agent'
+        ? 'Review agent login state, skillset, campaign eligibility, and availability during the routing period.'
+        : 'Review agent availability and routing eligibility during the detected wait period.',
+      analysis.disconnectionCount>0
+        ? 'Review the CallFront client disconnection/reconnection events and confirm whether routing continued successfully afterward.'
+        : 'No CallFront client disconnection was detected in this routing session.',
+      analysis.processingValue!==undefined
+        ? 'Use the RoutingEntry processing value together with its configured maximum as a routing-load indicator; do not assume the value is milliseconds unless the application unit is confirmed.'
+        : 'Upload the processRoutingEntry() log line when RoutingEntry processing values are required.'
     ]
   }
 }
 
+
+
+export function normalizeLicenseOccupancy(analysis:LicenseOccupancyAnalysis):NormalizedAnalysisResult {
+  const percent=(value?:number)=>value===undefined?undefined:`${value.toFixed(1)}%`
+  const moduleRef=moduleReferenceFor(analysis.moduleId)
+  const licenseDetected=analysis.usedLicense!==undefined||analysis.totalLicense!==undefined||analysis.licenseInsufficientDetected
+  const licenseUsage=analysis.usedLicense!==undefined&&analysis.totalLicense!==undefined
+    ? `${analysis.usedLicense} / ${analysis.totalLicense}${analysis.licenseUtilizationPercentage!==undefined?` (${percent(analysis.licenseUtilizationPercentage)})`:''}`
+    : 'Not detected in uploaded log'
+
+  const agentCapacityStatus=analysis.exceededAgents>0
+    ? 'EXCEEDED'
+    : analysis.fullAgents>0
+      ? 'FULL'
+      : analysis.availableAgents>0
+        ? 'AVAILABLE'
+        : 'UNKNOWN'
+
+  const finalStatus=analysis.exceededAgents>0
+    ? 'Agent Capacity EXCEEDED'
+    : analysis.fullAgents>0
+      ? 'Agent Capacity FULL'
+      : analysis.licenseStatus==='INSUFFICIENT'
+        ? 'Messaging License INSUFFICIENT'
+        : analysis.licenseStatus==='FULL'||analysis.licenseStatus==='EXCEEDED'
+          ? `Messaging License ${analysis.licenseStatus}`
+          : 'No Capacity Exhaustion Confirmed'
+
+  return {
+    moduleName:'Messaging License Occupancy · V14',
+    title:'Messaging license and agent-capacity analysis',
+    finalStatus,
+    statusBreakdown:fields(
+      field('Module',`${moduleRef.name} (${analysis.moduleId})`),
+      field('Tenant License',licenseDetected?`${analysis.licenseStatus} · ${licenseUsage}`:'Not detected'),
+      field('Agent Capacity',`${agentCapacityStatus} · ${analysis.exceededAgents} exceeded · ${analysis.fullAgents} full · ${analysis.availableAgents} with capacity`),
+      field('Routing Evidence',`${analysis.noAvailableAgentResponses} no-agent response(s) · ${analysis.successfulBookings} successful booking(s)`)
+    ),
+    summary:fields(
+      field('Module',moduleRef.name),
+      field('Module ID',analysis.moduleId),
+      field('License Usage',licenseUsage),
+      field('License Status',licenseDetected?analysis.licenseStatus:'NOT DETECTED'),
+      field('Full Agents',analysis.fullAgents),
+      field('Exceeded Agents',analysis.exceededAgents),
+      field('Agents With Capacity',analysis.availableAgents),
+      field('No-Agent Routing Responses',analysis.noAvailableAgentResponses),
+      field('Successful Bookings',analysis.successfulBookings)
+    ),
+    technicalDetails:fields(
+      field('License Insufficient Detected',analysis.licenseInsufficientDetected?'Yes':'No'),
+      field('Module Reference Status',moduleRef.active?'Active':'Unused in OC5'),
+      field('Module Reference Note',moduleRef.note)
+    ),
+    tables:[{
+      title:'Agent Messaging Capacity',
+      description:'One row per agent. Status preserves the highest-severity capacity observed during the uploaded log period; Latest shows the most recent observed session count.',
+      columns:['Agent','Latest','Peak','Maximum','Available','Peak Usage','Status','Observations'],
+      rows:analysis.agents.map(agent=>[
+        agent.agentId,
+        agent.currentSessionCampaign??'—',
+        agent.peakSessionCampaign??agent.currentSessionCampaign??'—',
+        agent.maxSessionCampaign??'—',
+        agent.availableSlots??'—',
+        percent(agent.peakUtilizationPercentage??agent.utilizationPercentage)??'—',
+        agent.status,
+        agent.observations
+      ])
+    }],
+    timeline:ordered(analysis.events.map(event=>({
+      timestamp:event.timestamp,
+      title:event.label,
+      raw:event.rawLine,
+      sortTime:event.timestampMs,
+      lineNumber:event.lineNumber
+    }))),
+    finding:analysis.finding,
+    rootCause:analysis.rootCause,
+    recommendations:analysis.recommendations
+  }
+}

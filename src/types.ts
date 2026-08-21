@@ -1,5 +1,45 @@
 export type NetworkSeverity = 'critical' | 'important' | 'media-quality'
-export type LogType = 'socketio-efv' | 'pjsip-rtt' | 'efrontvoice-ivr' | 'efrontvoice' | 'asterisk-ivr' | 'asterisk-voicemail' | 'opscentral-webhook' | 'ocod5-whatsapp' | 'routing-delay'
+export type LogType = 'socketio-efv' | 'pjsip-rtt' | 'efrontvoice-ivr' | 'efrontvoice' | 'asterisk-ivr' | 'asterisk-voicemail' | 'opscentral-webhook' | 'ocod5-whatsapp' | 'routing-delay' | 'messaging-license'
+
+export interface ModuleReference {
+  id: number
+  name: string
+  active: boolean
+  note?: string
+}
+
+export const MODULE_REFERENCES: Record<number, ModuleReference> = {
+  1: { id: 1, name: 'eFrontVoice', active: true },
+  2: { id: 2, name: 'eFrontVoice IVR', active: false, note: 'Unused in OC5' },
+  3: { id: 3, name: 'eFrontVoice Dialer', active: false, note: 'Unused in OC5' },
+  4: { id: 4, name: 'eFrontVoice Mobile', active: false, note: 'Unused in OC5' },
+  5: { id: 5, name: 'eFrontVoice Recorder', active: false, note: 'Unused in OC5' },
+  6: { id: 6, name: 'eFrontMail', active: true },
+  8: { id: 8, name: 'eFrontFax', active: false, note: 'Unused in OC5' },
+  10: { id: 10, name: 'eFrontVoice Analysis', active: false, note: 'Unused in OC5' },
+  11: { id: 11, name: 'Management', active: true },
+  12: { id: 12, name: 'eFrontVoice Report', active: false, note: 'Unused in OC5' },
+  13: { id: 13, name: 'eFrontMail Analysis', active: false, note: 'Unused in OC5' },
+  14: { id: 14, name: 'eFrontMail Management', active: false, note: 'Unused in OC5' },
+  15: { id: 15, name: 'eFrontMail Report', active: false, note: 'Unused in OC5' },
+  16: { id: 16, name: 'eFrontFax Analysis', active: false, note: 'Unused in OC5' },
+  17: { id: 17, name: 'eFrontFax Management', active: false, note: 'Unused in OC5' },
+  18: { id: 18, name: 'eFrontFax Report', active: false, note: 'Unused in OC5' },
+  19: { id: 19, name: 'Messaging', active: true },
+  20: { id: 20, name: 'CM', active: true },
+  21: { id: 21, name: 'CRM', active: true },
+  22: { id: 22, name: 'Ticketing', active: true },
+  23: { id: 23, name: 'OnCall CRM', active: true },
+  1001: { id: 1001, name: 'Chatbot', active: true },
+  1002: { id: 1002, name: 'Email', active: true },
+  1003: { id: 1003, name: 'Call', active: true },
+  1004: { id: 1004, name: 'Voice Management', active: true },
+  1005: { id: 1005, name: 'KB', active: true },
+}
+
+export const moduleReferenceFor = (moduleId: number): ModuleReference =>
+  MODULE_REFERENCES[moduleId] ?? { id: moduleId, name: `Unknown Module ${moduleId}`, active: true }
+
 
 /** Retained internally for diagnostics and tests; never rendered in the normal UI. */
 export interface SourceReference {
@@ -47,6 +87,7 @@ export interface AnalysisResult {
   whatsappMessages: WhatsappMessageAnalysis[]
   voicemailCalls: VoicemailCallAnalysis[]
   routingDelayAnalyses: RoutingDelayAnalysis[]
+  licenseOccupancyAnalyses: LicenseOccupancyAnalysis[]
 }
 
 export type VoicemailOutcome='No voicemail saved'|'Voicemail saved successfully'|'Mailbox configuration problem'|'Storage or permission problem'|'Voicemail application error'|'Inconclusive'
@@ -125,13 +166,23 @@ export interface AgentRoutingAnalysis { customerNumber?:string; webSocketSession
 export type RoutingDelayStatus = 'Normal'|'Minor Routing Wait'|'Routing Delay'|'Extended Routing Delay'|'Incomplete'
 export interface RoutingDelayResponse { responseId:number; timestamp?:string; timestampMs?:number; latencyMs?:number; preferredLanguage?:boolean; defaultLanguage?:boolean; preferredProduct?:boolean; defaultProduct?:boolean; routingEntryId?:string }
 export interface RoutingDelayAttempt { routingEntryId?:string; timestamp?:string; timestampMs?:number; response?:RoutingDelayResponse }
+export type RoutingOutcome = 'Agent Found'|'Agent Found After Retry'|'No Available Agent'|'Connection Interrupted'|'Incomplete Routing'
 export interface RoutingDelayAnalysis {
   customerNumber?:string
   webSocketSession?:string
+  clientStartTime?:string
+  clientStopTime?:string
+  routingSessionDurationMs?:number
   routingStart?:string
   routingEnd?:string
   totalRoutingWaitMs?:number
+  agentSearchStart?:string
+  agentSearchEnd?:string
+  agentSearchDurationMs?:number
   lookupAttempts:number
+  noAvailableAgentResponses:number
+  selectedAgentId?:number
+  routingOutcome:RoutingOutcome
   averageRetryIntervalMs?:number
   minimumRetryIntervalMs?:number
   maximumRetryIntervalMs?:number
@@ -141,6 +192,13 @@ export interface RoutingDelayAnalysis {
   repeatedResponseId?:number
   finalResponseId?:number
   responseStateChanged:boolean
+  preferredLanguage?:boolean
+  defaultLanguage?:boolean
+  preferredProduct?:boolean
+  defaultProduct?:boolean
+  processingValue?:number
+  maximumProcessingValue?:number
+  usagePercentage?:number
   routingEntryIds:string[]
   disconnectionCount:number
   status:RoutingDelayStatus
@@ -160,3 +218,53 @@ export type WhatsappStatus='Delivered and read'|'Delivered, awaiting read'|'Sent
 export interface WhatsappEvidence { timestamp?:string; timestampMs?:number; providerTimestampMs?:number; lineNumber:number; type:'SEND_ATTEMPT'|'PROVIDER_SUBMISSION'|'SENT'|'DELIVERED'|'READ'|'INBOUND'|'FAILURE'; label:string; rawLine:string; duplicate?:boolean }
 export interface WhatsappTimings { sendToSentMs?:number; sentToDeliveredMs?:number; deliveredToReadMs?:number; inboundToResponseMs?:number; webhookLagMs?:number }
 export interface WhatsappMessageAnalysis { key:string; conversationId?:string; messageId?:string; taskId?:string; transactionId?:string; campaignId?:string; customerNumber?:string; maskedCustomer:string; businessNumber?:string; maskedBusiness:string; wabaId?:string; userId?:string; direction:'Inbound'|'Outbound'|'Unknown'; messageType?:string; conversationType?:string; contextualReplyId?:string; status:WhatsappStatus; statusProgression:string[]; duplicateCallbacks:number; warnings:string[]; errors:string[]; timings:WhatsappTimings; events:WhatsappEvidence[]; finding:string; problemScore:number }
+
+
+export type LicensePoolStatus = 'NORMAL'|'NEAR LIMIT'|'FULL'|'EXCEEDED'|'INSUFFICIENT'|'UNKNOWN'
+export type AgentMessagingCapacityStatus = 'AVAILABLE'|'NEAR LIMIT'|'FULL'|'EXCEEDED'|'UNKNOWN'
+
+export interface LicenseOccupancyEvent {
+  timestamp?: string
+  timestampMs?: number
+  lineNumber: number
+  type: 'LICENSE'|'LOGIN'|'AGENT_CAPACITY'|'ROUTING'|'BOOKING'
+  label: string
+  rawLine: string
+}
+
+export interface AgentMessagingCapacity {
+  agentId: string
+  currentSessionCampaign?: number
+  currentSessionAll?: number
+  maxSessionCampaign?: number
+  peakSessionCampaign?: number
+  availableSlots?: number
+  utilizationPercentage?: number
+  peakUtilizationPercentage?: number
+  status: AgentMessagingCapacityStatus
+  firstSeen?: string
+  lastSeen?: string
+  observations: number
+  events: LicenseOccupancyEvent[]
+}
+
+export interface LicenseOccupancyAnalysis {
+  key: string
+  moduleId: number
+  usedLicense?: number
+  totalLicense?: number
+  licenseUtilizationPercentage?: number
+  licenseStatus: LicensePoolStatus
+  licenseInsufficientDetected: boolean
+  selectedAgentId?: string
+  agents: AgentMessagingCapacity[]
+  fullAgents: number
+  exceededAgents: number
+  availableAgents: number
+  noAvailableAgentResponses: number
+  successfulBookings: number
+  finding: string
+  rootCause: string
+  recommendations: string[]
+  events: LicenseOccupancyEvent[]
+}

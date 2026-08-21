@@ -1,0 +1,123 @@
+/* SignalTrace V15 - Default Checking Scripts
+   Add these styles to your existing application stylesheet. */
+
+.analyzer-layout {
+  display: grid;
+  grid-template-columns: minmax(360px, 1fr) minmax(420px, 1.1fr);
+  gap: 24px;
+  align-items: start;
+  width: min(1100px, 94vw);
+  margin: 0 auto;
+}
+
+.checking-scripts-panel {
+  background: #fff;
+  border: 1px solid #dbe5f3;
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: 0 10px 30px rgba(15, 35, 70, 0.06);
+}
+
+.checking-scripts-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.checking-scripts-heading > span {
+  font-weight: 700;
+}
+
+.checking-scripts-heading small,
+.checking-script-card header small {
+  color: #64748b;
+}
+
+.checking-script-inputs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.checking-script-inputs label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.checking-script-inputs input {
+  width: 100%;
+  border: 1px solid #d7e0ec;
+  border-radius: 8px;
+  padding: 9px 10px;
+}
+
+.checking-script-list {
+  display: grid;
+  gap: 12px;
+}
+
+.checking-script-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.checking-script-card header {
+  display: grid;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
+.checking-script-card header > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.optional-badge {
+  border-radius: 999px;
+  background: #f1f5f9;
+  padding: 2px 7px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.checking-script-card pre {
+  margin: 0 0 10px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: #0f172a;
+  color: #e2e8f0;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.copy-script-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  border-radius: 8px;
+  padding: 7px 10px;
+  cursor: pointer;
+}
+
+@media (max-width: 900px) {
+  .analyzer-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .checking-script-inputs {
+    grid-template-columns: 1fr;
+  }
+}

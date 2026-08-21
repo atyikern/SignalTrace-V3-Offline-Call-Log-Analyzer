@@ -204,3 +204,237 @@ footer { border-top: 1px solid var(--border); }
 .upload-workflow .agent-selector select option[value="routing-delay"] {
   font-weight: 700;
 }
+
+
+/* SignalTrace V14 — Messaging License Occupancy readability */
+.license-occupancy-report .analysis-summary {
+  padding: 28px 34px 26px;
+  background: #f0fdf4;
+}
+.license-occupancy-report .analysis-summary > span {
+  font-size: 10px;
+  letter-spacing: 1.2px;
+}
+.license-occupancy-report .analysis-summary strong {
+  max-width: 820px;
+  font-size: clamp(24px, 3vw, 34px);
+  line-height: 1.2;
+  margin-top: 10px;
+}
+
+.status-breakdown {
+  border-bottom: 1px solid var(--border);
+  background: #fff;
+  padding: 24px 34px 28px;
+}
+.status-breakdown-heading {
+  margin-bottom: 14px;
+}
+.status-breakdown-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.status-breakdown-grid > div {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: #f8fafc;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.status-breakdown-grid span {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .9px;
+}
+.status-breakdown-grid b {
+  color: #10233f;
+  font-size: 15px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.status-progression-section {
+  border-bottom: 1px solid var(--border);
+  background: #fff;
+  padding: 20px 34px 24px;
+}
+.status-progression-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.status-progression-chips > span {
+  border: 1px solid #d5dfeb;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #334b65;
+  padding: 7px 10px;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.license-occupancy-report .shared-summary-metrics {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  background: #f8fafc;
+  padding: 1px 0;
+}
+.license-occupancy-report .shared-summary-metrics > div {
+  min-height: 82px;
+  padding: 18px 20px;
+  background: #fff;
+}
+.license-occupancy-report .shared-summary-metrics span {
+  font-size: 9px;
+  line-height: 1.35;
+}
+.license-occupancy-report .shared-summary-metrics b {
+  font-size: 15px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.analysis-table-section {
+  padding: 28px 34px 30px;
+  border-bottom: 1px solid var(--border);
+  background: #fff;
+}
+.analysis-table-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 16px;
+}
+.analysis-table-heading p {
+  max-width: 720px;
+  margin: 7px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.55;
+}
+.analysis-table-heading > b {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #eef3f8;
+  color: #5f7389;
+  padding: 6px 10px;
+  font-size: 9px;
+}
+.analysis-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+}
+.analysis-table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 760px;
+  background: #fff;
+}
+.analysis-table-wrap th {
+  background: #f8fafc;
+  color: #61758a;
+  padding: 11px 13px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  font-size: 9px;
+  letter-spacing: .7px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.analysis-table-wrap td {
+  padding: 12px 13px;
+  border-bottom: 1px solid #e8eef5;
+  color: #203a57;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.analysis-table-wrap tbody tr:last-child td {
+  border-bottom: 0;
+}
+.analysis-table-wrap tbody tr:hover {
+  background: #f8fbff;
+}
+.capacity-status {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .4px;
+}
+.capacity-exceeded {
+  background: #fff1f2;
+  color: #b4232f;
+  border: 1px solid #fecdd3;
+}
+.capacity-full {
+  background: #fff7ed;
+  color: #b45309;
+  border: 1px solid #fed7aa;
+}
+.capacity-near-limit {
+  background: #fffbeb;
+  color: #a16207;
+  border: 1px solid #fde68a;
+}
+.capacity-available {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+.capacity-unknown {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+}
+
+.license-occupancy-report .whatsapp-technical-details,
+.license-occupancy-report .technical-timeline {
+  background: #fff;
+}
+.license-occupancy-report .whatsapp-technical-details summary,
+.license-occupancy-report .technical-timeline summary {
+  padding: 2px 0;
+  color: #203a57;
+}
+.license-occupancy-report .technical-timeline {
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+.license-occupancy-report .technical-timeline[open] {
+  padding-bottom: 26px;
+}
+
+@media (max-width: 800px) {
+  .status-breakdown-grid {
+    grid-template-columns: 1fr;
+  }
+  .license-occupancy-report .shared-summary-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 520px) {
+  .license-occupancy-report .analysis-summary,
+  .status-breakdown,
+  .status-progression-section,
+  .analysis-table-section {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  .license-occupancy-report .shared-summary-metrics {
+    grid-template-columns: 1fr;
+  }
+  .analysis-table-heading {
+    flex-direction: column;
+  }
+}

@@ -7,6 +7,7 @@ import { analyzeAsteriskIvr } from './asteriskIvrAnalyzer'
 import { analyzeVoiceCalls, analyzeVoiceExtensions, normalizeEfrontVoiceRecords } from './voiceAnalyzer'
 import { analyzeVoicemail } from './voicemailAnalyzer'
 import { analyzeRoutingDelay } from './routingDelayAnalyzer'
+import { analyzeLicenseOccupancy } from './licenseOccupancyAnalyzer'
 
 export const DEFAULT_GROUPING_WINDOW_MS = 2_000
 
@@ -146,9 +147,10 @@ function summarize(metadata: AgentMetadata, problems: ProblemTime[]): AgentAnaly
 export function analyzeLog(contents: string, fileName = 'PBX log', groupingWindowMs = DEFAULT_GROUPING_WINDOW_MS, logType?: LogType, ivrThresholds?: IvrThresholds, whatsappThresholds?:WhatsappThresholds): AnalysisResult {
   const physicalLines = normalizeLogRecords(contents)
   const voiceRecords = normalizeEfrontVoiceRecords(contents)
-  const empty = { fileName, logType, totalLines: voiceRecords.length, ignoredLines: 0, agents: [], extensions: [], ivrCalls: [], voiceCalls: [], voiceExtensions: [], asteriskIvrCalls: [], webhookTransactions: [], whatsappMessages: [], voicemailCalls: [], routingDelayAnalyses: [] }
+  const empty = { fileName, logType, totalLines: voiceRecords.length, ignoredLines: 0, agents: [], extensions: [], ivrCalls: [], voiceCalls: [], voiceExtensions: [], asteriskIvrCalls: [], webhookTransactions: [], whatsappMessages: [], voicemailCalls: [], routingDelayAnalyses: [], licenseOccupancyAnalyses: [] }
   if(logType==='ocod5-whatsapp')return{...empty,whatsappMessages:analyzeOcod5Whatsapp(contents,whatsappThresholds)}
   if (logType === 'routing-delay') return { ...empty, routingDelayAnalyses: analyzeRoutingDelay(contents) }
+  if (logType === 'messaging-license') return { ...empty, licenseOccupancyAnalyses: analyzeLicenseOccupancy(contents) }
   if (logType === 'opscentral-webhook') return { ...empty, webhookTransactions: analyzeWebhook(contents) }
   if (logType === 'asterisk-ivr') return { ...empty, asteriskIvrCalls: analyzeAsteriskIvr(contents) }
   if (logType === 'asterisk-voicemail') return { ...empty, voicemailCalls: analyzeVoicemail(contents) }
@@ -214,7 +216,7 @@ export function analyzeLog(contents: string, fileName = 'PBX log', groupingWindo
     .sort((a, b) => a.agent.localeCompare(b.agent))
 
   if (logType === 'socketio-efv') return { ...empty, ignoredLines, agents: analyses }
-  return { fileName, logType, totalLines: voiceRecords.length, ignoredLines, agents: analyses, extensions: analyzePjsipNetworks(physicalLines), ivrCalls: analyzeIvrCalls(physicalLines), voiceCalls: analyzeVoiceCalls(voiceRecords), voiceExtensions: analyzeVoiceExtensions(voiceRecords), asteriskIvrCalls: analyzeAsteriskIvr(contents), webhookTransactions: analyzeWebhook(contents), whatsappMessages:analyzeOcod5Whatsapp(contents), voicemailCalls:analyzeVoicemail(contents), routingDelayAnalyses: analyzeRoutingDelay(contents) }
+  return { fileName, logType, totalLines: voiceRecords.length, ignoredLines, agents: analyses, extensions: analyzePjsipNetworks(physicalLines), ivrCalls: analyzeIvrCalls(physicalLines), voiceCalls: analyzeVoiceCalls(voiceRecords), voiceExtensions: analyzeVoiceExtensions(voiceRecords), asteriskIvrCalls: analyzeAsteriskIvr(contents), webhookTransactions: analyzeWebhook(contents), whatsappMessages:analyzeOcod5Whatsapp(contents), voicemailCalls:analyzeVoicemail(contents), routingDelayAnalyses: analyzeRoutingDelay(contents), licenseOccupancyAnalyses: analyzeLicenseOccupancy(contents) }
 }
 
 export const networkIndicatorRules = INDICATOR_RULES.map(({ label, severity }) => ({ label, severity }))
