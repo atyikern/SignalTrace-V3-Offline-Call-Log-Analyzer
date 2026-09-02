@@ -149,7 +149,7 @@ export function analyzeLog(contents: string, fileName = 'PBX log', groupingWindo
   const voiceRecords = normalizeEfrontVoiceRecords(contents)
   const empty = { fileName, logType, totalLines: voiceRecords.length, ignoredLines: 0, agents: [], extensions: [], ivrCalls: [], voiceCalls: [], voiceExtensions: [], asteriskIvrCalls: [], webhookTransactions: [], whatsappMessages: [], voicemailCalls: [], routingDelayAnalyses: [], licenseOccupancyAnalyses: [] }
   if(logType==='ocod5-whatsapp')return{...empty,whatsappMessages:analyzeOcod5Whatsapp(contents,whatsappThresholds)}
-  if (logType === 'routing-delay') return { ...empty, routingDelayAnalyses: analyzeRoutingDelay(contents) }
+  if (logType === 'routing-delay'||logType==='messaging-routing-delay') return { ...empty, routingDelayAnalyses: analyzeRoutingDelay(contents,logType==='messaging-routing-delay'?'Messaging':'Voice') }
   if (logType === 'messaging-license') return { ...empty, licenseOccupancyAnalyses: analyzeLicenseOccupancy(contents) }
   if (logType === 'opscentral-webhook') return { ...empty, webhookTransactions: analyzeWebhook(contents) }
   if (logType === 'asterisk-ivr') return { ...empty, asteriskIvrCalls: analyzeAsteriskIvr(contents) }

@@ -98,17 +98,35 @@ export function normalizeRoutingDelay(analysis:RoutingDelayAnalysis):NormalizedA
   const match=(value?:boolean)=>value===undefined?undefined:value?'Matched':'Not matched'
 
   return {
-    moduleName:'Messaging Routing Delay · V13',
-    title:'Available-agent routing delay analysis',
-    finalStatus:`${analysis.status} · ${analysis.routingOutcome}`,
+    moduleName:`${analysis.module} Routing Delay · V14`,
+    title:`${analysis.module} routing delay analysis`,
+    finalStatus:`${analysis.routingHealth} · ${analysis.routingHealth==='GOOD'?'Routing Normal':analysis.routingHealth==='WARNING'?'Routing Warning':'Routing Critical'}${analysis.finalRoutingOutcome==='Not Confirmed'?' / Outcome Not Confirmed':''}`,
     statusProgression:analysis.responses.map(item=>item.responseId===-1?'No Available Agent':`Agent ${item.responseId} Found`),
     summary:fields(
       field('Routing Session Duration',duration(analysis.routingSessionDurationMs)),
       field('Agent Search Duration',duration(analysis.agentSearchDurationMs)),
-      field('Total Routing Wait',duration(analysis.totalRoutingWaitMs)),
+      field('Routing Health',analysis.routingHealth),
+      field('Final Routing Outcome',analysis.finalRoutingOutcome),
+      field('Evidence Completeness',analysis.evidenceCompleteness),
+      field('Total Routing Time',duration(analysis.totalRoutingTimeMs??analysis.totalRoutingWaitMs)),
       field('GETAVAILAGT Attempts',analysis.lookupAttempts),
+      field('Retry Count',analysis.retryCount),
+      field('Slowest Routing Step',analysis.slowestRoutingStep),
+      field('Slowest Step Duration',duration(analysis.slowestStepDurationMs)),
+      field('Longest GETAVAILAGT Response',duration(analysis.maximumResponseLatencyMs)),
+      field('Slow GETAVAILAGT Responses (>2 sec)',analysis.slowResponseCount),
+      field('Overlapping GETAVAILAGT Requests',analysis.overlappingRequestCount),
+      field('Longest selectCurrentMsgAgent Duration',duration(analysis.longestSelectCurrentMsgAgentDurationMs)),
+      field('Cumulative Lookup Delay',duration(analysis.cumulativeSelectCurrentMsgAgentDurationMs)),
+      field('selectCurrentMsgAgent Status',analysis.selectCurrentMsgAgentStatus),
       field('No-Agent Responses',analysis.noAvailableAgentResponses),
       field('Selected Agent',agentMeaning(analysis.selectedAgentId)),
+      field('Agent Occupied / Maximum Capacity',analysis.agentOccupiedSlots===undefined&&analysis.agentMaximumCapacity===undefined?undefined:`${analysis.agentOccupiedSlots??'Unknown'} / ${analysis.agentMaximumCapacity??'Unknown'}`),
+      field('Agent Has Available Capacity',analysis.agentHasAvailableCapacity===undefined?undefined:analysis.agentHasAvailableCapacity?'Yes':'No'),
+      field('Booking Cancellations',analysis.bookingCancellations),
+      field('Automatic Unbook Events',analysis.automaticUnbookEvents),
+      field('Agent Booking Retry',analysis.agentBookingRetryDetected?'Yes':'No'),
+      field('Affected Agent',agentMeaning(analysis.affectedAgentId)),
       field('Average Retry Interval',duration(analysis.averageRetryIntervalMs)),
       field('Retry Interval Range',retryRange),
       field('Average Response Latency',duration(analysis.averageResponseLatencyMs)),
@@ -118,6 +136,9 @@ export function normalizeRoutingDelay(analysis:RoutingDelayAnalysis):NormalizedA
     ),
     technicalDetails:fields(
       field('Customer Phone Number',analysis.customerNumber),
+      field('Call ID',analysis.callId),
+      field('Agent Group ID',analysis.agentGroupId),
+      field('Primary Delay Source',analysis.primaryDelaySource),
       field('WebSocket Session',analysis.webSocketSession),
       field('Routing Session Start',analysis.clientStartTime),
       field('Routing Session End',analysis.clientStopTime),
@@ -133,13 +154,15 @@ export function normalizeRoutingDelay(analysis:RoutingDelayAnalysis):NormalizedA
       field('Routing Processing Usage',analysis.usagePercentage===undefined?undefined:`${analysis.usagePercentage.toFixed(2)}%`),
       field('RoutingEntry Count',analysis.routingEntryIds.length),
       field('RoutingEntry IDs',analysis.routingEntryIds.join(', ')),
-      field('Disconnection Count',analysis.disconnectionCount)
+      field('Disconnection Count',analysis.disconnectionCount),
+      field('Other Slow Routing Sessions (±1 min)',analysis.concurrentSlowRoutingSessions)
     ),
     timeline:ordered(analysis.events.map((event,index)=>({
       timestamp:event.timestamp,
       title:event.label,
       sortTime:event.timestampMs,
-      lineNumber:index+1
+      lineNumber:index+1,
+      raw:event.rawLine
     }))),
     finding:analysis.finding,
     rootCause:analysis.rootCauseAssessment,
@@ -152,7 +175,13 @@ export function normalizeRoutingDelay(analysis:RoutingDelayAnalysis):NormalizedA
         : 'No CallFront client disconnection was detected in this routing session.',
       analysis.processingValue!==undefined
         ? 'Use the RoutingEntry processing value together with its configured maximum as a routing-load indicator; do not assume the value is milliseconds unless the application unit is confirmed.'
-        : 'Upload the processRoutingEntry() log line when RoutingEntry processing values are required.'
+        : 'Upload the processRoutingEntry() log line when RoutingEntry processing values are required.',
+      analysis.longestSelectCurrentMsgAgentDurationMs!==undefined&&analysis.longestSelectCurrentMsgAgentDurationMs>2000
+        ? 'Investigate the selectCurrentMsgAgent() database query for slow execution, blocking/locking, load, and missing indexes.'
+        : 'No slow selectCurrentMsgAgent() duration was present in the available routing evidence.',
+      analysis.concurrentSlowRoutingSessions>0
+        ? 'Other calls were also slow in the same time window; assess shared application and database load rather than treating this as an isolated agent issue.'
+        : 'No other slow routing session was detected within one minute in this upload.'
     ]
   }
 }

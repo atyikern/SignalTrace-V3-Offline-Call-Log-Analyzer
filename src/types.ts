@@ -1,5 +1,5 @@
 export type NetworkSeverity = 'critical' | 'important' | 'media-quality'
-export type LogType = 'socketio-efv' | 'pjsip-rtt' | 'efrontvoice-ivr' | 'efrontvoice' | 'asterisk-ivr' | 'asterisk-voicemail' | 'opscentral-webhook' | 'ocod5-whatsapp' | 'routing-delay' | 'messaging-license'
+export type LogType = 'socketio-efv' | 'pjsip-rtt' | 'efrontvoice-ivr' | 'efrontvoice' | 'asterisk-ivr' | 'asterisk-voicemail' | 'opscentral-webhook' | 'ocod5-whatsapp' | 'routing-delay' | 'messaging-routing-delay' | 'messaging-license'
 
 export interface ModuleReference {
   id: number
@@ -159,7 +159,7 @@ export interface AsteriskIvrCall { key:string; processId?:string; callerId?:stri
 
 
 export type AgentRoutingStatus = 'Client Started'|'Searching for Available Agent'|'Agent Found'|'Agent Found After Retry'|'No Available Agent'|'CallFront Connection Interrupted'|'Client Stopped'|'Incomplete Agent Routing'
-export interface AgentRoutingEvent { timestamp?:string; timestampMs?:number; type:'CLIENT_STARTED'|'AGENT_SEARCH'|'AGENT_RESPONSE'|'CONNECTION_INTERRUPTED'|'CLIENT_STOPPED'|'PROCESSING_VALUE'; label:string }
+export interface AgentRoutingEvent { timestamp?:string; timestampMs?:number; type:'CLIENT_STARTED'|'AGENT_SEARCH'|'AGENT_RESPONSE'|'CONNECTION_INTERRUPTED'|'CLIENT_STOPPED'|'PROCESSING_VALUE'; label:string; rawLine?:string }
 export interface AgentRoutingAnalysis { customerNumber?:string; webSocketSession?:string; routingEntryId?:string; clientStartTime?:string; agentSearchTime?:string; agentResponseTime?:string; agentLookupDelayMs?:number; selectedAgentId?:number; lookupAttempts:number; responseAgentIds:number[]; preferredLanguage?:boolean; defaultLanguage?:boolean; preferredProduct?:boolean; defaultProduct?:boolean; finalStatus:AgentRoutingStatus; connectionWarning?:string; disconnectionCount:number; processingValue?:number; maximumProcessingValue?:number; usagePercentage?:number; rawGetAvailableAgentParameters?:string; events:AgentRoutingEvent[]; finding:string }
 
 
@@ -167,6 +167,10 @@ export type RoutingDelayStatus = 'Normal'|'Minor Routing Wait'|'Routing Delay'|'
 export interface RoutingDelayResponse { responseId:number; timestamp?:string; timestampMs?:number; latencyMs?:number; preferredLanguage?:boolean; defaultLanguage?:boolean; preferredProduct?:boolean; defaultProduct?:boolean; routingEntryId?:string }
 export interface RoutingDelayAttempt { routingEntryId?:string; timestamp?:string; timestampMs?:number; response?:RoutingDelayResponse }
 export type RoutingOutcome = 'Agent Found'|'Agent Found After Retry'|'No Available Agent'|'Connection Interrupted'|'Incomplete Routing'
+export type AgentSelectionDurationStatus = 'GOOD'|'WARNING'|'CRITICAL'|'CRITICAL - SEVERE'
+export type RoutingHealth = 'GOOD'|'WARNING'|'CRITICAL'
+export type FinalRoutingOutcome = 'Confirmed Successful'|'Not Confirmed'|'Failed'
+export type EvidenceCompleteness = 'Complete'|'Partial'
 export interface RoutingDelayAnalysis {
   customerNumber?:string
   webSocketSession?:string
@@ -182,6 +186,8 @@ export interface RoutingDelayAnalysis {
   lookupAttempts:number
   noAvailableAgentResponses:number
   selectedAgentId?:number
+  callId?:string
+  agentGroupId?:string
   routingOutcome:RoutingOutcome
   averageRetryIntervalMs?:number
   minimumRetryIntervalMs?:number
@@ -189,6 +195,30 @@ export interface RoutingDelayAnalysis {
   averageResponseLatencyMs?:number
   minimumResponseLatencyMs?:number
   maximumResponseLatencyMs?:number
+  slowResponseCount:number
+  overlappingRequestCount:number
+  selectCurrentMsgAgentDurationsMs:number[]
+  longestSelectCurrentMsgAgentDurationMs?:number
+  selectCurrentMsgAgentStatus?:AgentSelectionDurationStatus
+  bookingCancellations:number
+  automaticUnbookEvents:number
+  agentOccupiedSlots?:number
+  agentMaximumCapacity?:number
+  agentHasAvailableCapacity?:boolean
+  concurrentSlowRoutingSessions:number
+  module:'Voice'|'Messaging'
+  routingHealth:RoutingHealth
+  totalRoutingTimeMs?:number
+  retryCount:number
+  slowestRoutingStep?:string
+  slowestStepDurationMs?:number
+  cumulativeSelectCurrentMsgAgentDurationMs:number
+  bookingAttempts:number
+  affectedAgentId?:number
+  agentBookingRetryDetected:boolean
+  primaryDelaySource?:string
+  finalRoutingOutcome:FinalRoutingOutcome
+  evidenceCompleteness:EvidenceCompleteness
   repeatedResponseId?:number
   finalResponseId?:number
   responseStateChanged:boolean

@@ -138,6 +138,12 @@ footer { max-width: 1100px; margin: 0 auto; padding: 27px 40px 40px; color: #718
 
 /* V12 shared OCOD5-inspired analysis presentation */
 .shared-analysis-report { line-height: 1.5; }
+.shared-analysis-report .analysis-summary.status-success { background: #f0fdf4; border-bottom-color: #bbf7d0; }
+.shared-analysis-report .analysis-summary.status-success strong { color: #16a34a; }
+.shared-analysis-report .analysis-summary.status-warning { background: #fff7ed; border-bottom-color: #fed7aa; }
+.shared-analysis-report .analysis-summary.status-warning strong { color: #ea580c; }
+.shared-analysis-report .analysis-summary.status-failed { background: #fef2f2; border-bottom-color: #fecaca; }
+.shared-analysis-report .analysis-summary.status-failed strong { color: #dc2626; }
 .shared-analysis-report .analysis-summary p { margin-bottom: 0; overflow-wrap: anywhere; }
 .shared-analysis-report .shared-summary-metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .shared-analysis-report .shared-summary-metrics > div { min-height: 62px; }
@@ -200,7 +206,7 @@ footer { border-top: 1px solid var(--border); }
 @media (max-width: 520px) { .case-history-page { padding: 32px 18px 60px; }.case-modal { padding: 22px 18px; }.case-actions { flex-direction: column-reverse; }.case-actions button { width: 100%; justify-content: center; }.case-history-list dl > div,.case-detail-list { grid-template-columns: 1fr; gap: 4px; }.case-history-list dd { margin-bottom: 7px; } }
 
 
-/* SignalTrace V13 — Messaging Routing Delay module */
+/* SignalTrace — Voice Routing Delay submodule */
 .upload-workflow .agent-selector select option[value="routing-delay"] {
   font-weight: 700;
 }

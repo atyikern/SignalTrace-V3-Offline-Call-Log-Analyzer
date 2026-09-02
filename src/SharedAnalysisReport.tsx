@@ -6,6 +6,14 @@ const timeOnly=(value?:string)=>value?.match(/\d{2}:\d{2}:\d{2}/)?.[0]??'Unknown
 
 const safePdfFileName=(value:string)=>value.replace(/[\\/:*?"<>|]+/g,'-').replace(/\s+/g,'-')
 
+export type AnalysisStatusTone = 'success'|'warning'|'failed'
+export function analysisStatusTone(finalStatus:string):AnalysisStatusTone {
+  const status=finalStatus.toLowerCase()
+  if(/\b(failed?|failure|error|no available|not routed|incomplete|interrupted|unreachable|busy|timeout|blacklisted|invalid|exceeded|full|insufficient|closed)\b/.test(status))return'failed'
+  if(/\b(warning|warn|retry|delay|pending|awaiting|minor|near limit|unknown)\b/.test(status))return'warning'
+  return'success'
+}
+
 function addWrappedText(pdf:jsPDF,text:string,x:number,y:number,maxWidth:number,lineHeight=5){
   const lines=pdf.splitTextToSize(text,maxWidth) as string[]
   for(const line of lines){
@@ -47,22 +55,6 @@ export function downloadAnalysisReport(result:NormalizedAnalysisResult,fileName=
   y=addWrappedText(pdf,result.title,left,y,width,5)
   y+=3
 
-  pdf.setFont('helvetica','bold')
-  pdf.text(`Final Status: ${result.finalStatus}`,left,y)
-  y+=7
-
-  if(result.statusBreakdown?.length){
-    pdf.setFont('helvetica','normal')
-    for(const item of result.statusBreakdown){
-      y=addWrappedText(pdf,`${item.label}: ${item.value}`,left,y,width,5)
-    }
-    y+=3
-  } else if(result.statusProgression?.length){
-    pdf.setFont('helvetica','normal')
-    y=addWrappedText(pdf,`Status Progression: ${result.statusProgression.join(' -> ')}`,left,y,width,5)
-    y+=3
-  }
-
   const section=(title:string)=>{
     y=ensureSpace(pdf,y,12)
     pdf.setFont('helvetica','bold')
@@ -71,37 +63,6 @@ export function downloadAnalysisReport(result:NormalizedAnalysisResult,fileName=
     y+=6
     pdf.setFont('helvetica','normal')
     pdf.setFontSize(9)
-  }
-
-  if(result.summary.length){
-    section('Summary')
-    for(const item of result.summary){
-      y=ensureSpace(pdf,y,10)
-      pdf.setFont('helvetica','bold')
-      pdf.text(`${item.label}:`,left,y)
-      pdf.setFont('helvetica','normal')
-      y=addWrappedText(pdf,String(item.value),left+42,y,width-42,4.5)
-      y+=1
-    }
-    y+=3
-  }
-
-  if(result.tables?.length){
-    for(const table of result.tables){
-      section(table.title)
-      if(table.description){
-        y=addWrappedText(pdf,table.description,left,y,width,4.5)
-        y+=2
-      }
-      y=addWrappedText(pdf,table.columns.join(' | '),left,y,width,4.5)
-      y+=1
-      for(const row of table.rows){
-        y=ensureSpace(pdf,y,10)
-        y=addWrappedText(pdf,row.map(value=>String(value)).join(' | '),left,y,width,4.3)
-        y+=1
-      }
-      y+=3
-    }
   }
 
   if(result.technicalDetails.length){
@@ -117,26 +78,6 @@ export function downloadAnalysisReport(result:NormalizedAnalysisResult,fileName=
     y+=3
   }
 
-  if(result.timeline.length){
-    section(`Technical Timeline (${result.timeline.length} events)`)
-    for(const event of result.timeline){
-      y=ensureSpace(pdf,y,14)
-      const stamp=event.timestamp??'Unknown time'
-      pdf.setFont('helvetica','bold')
-      pdf.text(stamp,left,y)
-      y+=4.5
-      pdf.setFont('helvetica','normal')
-      y=addWrappedText(pdf,event.title,left+4,y,width-4,4.5)
-      if(event.raw){
-        pdf.setFontSize(7.5)
-        y=addWrappedText(pdf,event.raw,left+4,y,width-4,4)
-        pdf.setFontSize(9)
-      }
-      y+=2
-    }
-    y+=2
-  }
-
   section('Finding')
   y=addWrappedText(pdf,result.finding,left,y,width,4.8)
   y+=4
@@ -145,28 +86,20 @@ export function downloadAnalysisReport(result:NormalizedAnalysisResult,fileName=
   y=addWrappedText(pdf,result.rootCause,left,y,width,4.8)
   y+=4
 
-  if(result.recommendations.length){
-    section('Recommendations')
-    result.recommendations.filter(Boolean).forEach((item,index)=>{
-      y=ensureSpace(pdf,y,10)
-      y=addWrappedText(pdf,`${index+1}. ${item}`,left,y,width,4.8)
-      y+=1
-    })
-  }
-
   const finalName=safePdfFileName(fileName.replace(/\.json$/i,'.pdf').replace(/\.pdf$/i,''))+'.pdf'
   pdf.save(finalName)
 }
 
 export function SharedAnalysisReport({result,controls,downloadFileName}:{result:NormalizedAnalysisResult;controls?:ReactNode;downloadFileName?:string}) {
   const progression=result.statusProgression?.filter((value,index,array)=>value&&value!==array[index-1])??[]
-  const pdfName=downloadFileName?.replace(/\.json$/i,'.pdf')
+  const pdfName=downloadFileName?.replace(/\.json$/i,'.pdf')??`${result.moduleName}-${result.title}.pdf`
   const isLicenseReport=/Messaging License Occupancy/i.test(result.moduleName)
+  const statusTone=analysisStatusTone(result.finalStatus)
   return <article className={`network-report shared-analysis-report whatsapp-report${isLicenseReport?' license-occupancy-report':''}`}>
-    <header className="report-header"><div><span className="kicker"><span/>{result.moduleName}</span><h2>{result.title}</h2></div>{downloadFileName&&<button className="secondary-button" onClick={()=>downloadAnalysisReport(result,pdfName)}>Download PDF</button>}</header>
+    <header className="report-header"><div><span className="kicker"><span/>{result.moduleName}</span><h2>{result.title}</h2></div><button className="secondary-button" onClick={()=>downloadAnalysisReport(result,pdfName)}>Download PDF</button></header>
     {controls}
 
-    <section className="ivr-outcome analysis-summary">
+    <section className={`ivr-outcome analysis-summary status-${statusTone}`}>
       <span>Final Status</span>
       <strong>{result.finalStatus}</strong>
       {result.duplicateEvents!==undefined&&<p><b>Duplicate callbacks/events:</b> {result.duplicateEvents}</p>}

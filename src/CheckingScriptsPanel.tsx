@@ -22,9 +22,9 @@ export function CheckingScriptsPanel({ logType }: { logType: LogType | '' }) {
   const context = { tenantName, phoneNumber, agentId }
 
   return (
-    <aside className="checking-scripts-panel" aria-label="Default checking scripts">
+    <aside className="checking-scripts-panel" aria-label="Recommended checking scripts">
       <div className="checking-scripts-heading">
-        <span>Default Checking Scripts</span>
+        <span>Recommended Checking Scripts</span>
         <small>Commands update automatically from the values below.</small>
       </div>
 
