@@ -7,6 +7,10 @@ export function CheckingScriptsPanel({ logType }: { logType: LogType | '' }) {
   const [tenantName, setTenantName] = useState('')
   const [phoneNumber, setPhoneNumber] = useState('')
   const [agentId, setAgentId] = useState('')
+  const [agentExtension, setAgentExtension] = useState('')
+  const [logDate, setLogDate] = useState('')
+  const [transactionId, setTransactionId] = useState('')
+  const [agentUsername, setAgentUsername] = useState('')
   const [copiedId, setCopiedId] = useState<string>()
 
   const scripts = useMemo(() => checkingScriptsFor(logType), [logType])
@@ -19,7 +23,7 @@ export function CheckingScriptsPanel({ logType }: { logType: LogType | '' }) {
     window.setTimeout(() => setCopiedId(current => current === id ? undefined : current), 1600)
   }
 
-  const context = { tenantName, phoneNumber, agentId }
+  const context = { tenantName, phoneNumber, agentId, agentExtension, logDate, transactionId, agentUsername }
 
   return (
     <aside className="checking-scripts-panel" aria-label="Recommended checking scripts">
@@ -55,6 +59,27 @@ export function CheckingScriptsPanel({ logType }: { logType: LogType | '' }) {
             placeholder="agent ID"
           />
         </label>
+
+        <label>
+          Agent Extension
+          <input
+            value={agentExtension}
+            onChange={event => setAgentExtension(event.target.value)}
+            placeholder="agent extension number"
+          />
+        </label>
+        {logType==='opscentral-webhook'&&<label>
+          Transaction ID
+          <input value={transactionId} onChange={event => setTransactionId(event.target.value)} placeholder="4125" />
+        </label>}
+        {logType==='socketio-efv'&&<label>
+          Agent Username
+          <input value={agentUsername} onChange={event => setAgentUsername(event.target.value)} placeholder="agent username" />
+        </label>}
+        {logType!=='ocod5-whatsapp'&&logType!=='pjsip-rtt'&&<label>
+          Log Date
+          <input type="date" value={logDate} onChange={event => setLogDate(event.target.value)} />
+        </label>}
       </div>
 
       <div className="checking-script-list">
