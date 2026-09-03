@@ -1,5 +1,5 @@
 import { moduleReferenceFor } from './types'
-import type { AgentAnalysis, AsteriskIvrCall, ExtensionNetworkAnalysis, IvrCall, LicenseOccupancyAnalysis, RoutingDelayAnalysis, VoiceCall, VoiceExtensionAnalysis, VoicemailCallAnalysis, WebhookTransaction, WhatsappMessageAnalysis } from './types'
+import type { AgentAnalysis, AsteriskIvrCall, CallQueueAnalysis, ExtensionNetworkAnalysis, IvrCall, LicenseOccupancyAnalysis, RoutingDelayAnalysis, VoiceCall, VoiceExtensionAnalysis, VoicemailCallAnalysis, WebhookTransaction, WhatsappMessageAnalysis } from './types'
 
 export interface ResultField { label:string; value:string|number }
 export interface ResultTimelineItem { timestamp?:string; title:string; raw?:string; sortTime?:number; lineNumber?:number }
@@ -58,6 +58,15 @@ export function normalizeVoiceCall(call:VoiceCall):NormalizedAnalysisResult {
     summary:fields(field('Call Status',call.callStatus),field('Agent Search Attempts',call.agentSearchAttempts),field('Agent Search Duration',call.agentSearchDurationSeconds===undefined?undefined:`${call.agentSearchDurationSeconds} sec`)),
     technicalDetails:fields(field('Customer Phone Number',call.callerId),field('Call ID',call.callId),field('TID (Transaction ID)',call.transactionId),field('Telephony Call ID',call.telephonyCallId),field('Campaign ID',call.campaignId),field('Agent Group',call.agentGroupId),field('Agent ID',call.agentId),field('Extension',call.extension),field('Hangup Cause',call.hangupCause)),
     timeline:ordered(call.events.map(event=>({timestamp:event.timestamp,title:event.label,raw:event.rawLine,sortTime:event.timestampMs,lineNumber:event.lineNumber}))),finding:call.finding??'No finding was generated.',rootCause:call.conclusion??call.routingStatus,recommendations:['Review Agent availability, routing eligibility, and the diagnostic timeline.']}
+}
+
+export function normalizeCallQueue(analysis:CallQueueAnalysis):NormalizedAnalysisResult {
+  const duration=analysis.observedQueueDurationMs===undefined?undefined:new Date(analysis.observedQueueDurationMs).toISOString().slice(11,19)
+  const routingState=analysis.agentSelectionSkipped&&analysis.isProcessing===false&&analysis.isRoutingCall===false?'Waiting / not actively selecting an agent':analysis.agentSelectionStarted?'Agent selection started':'Waiting / Agent selection temporarily skipped'
+  return {moduleName:'Voice · Call Queue Analysis',title:'VOICE > CALL QUEUE ANALYSIS',finalStatus:analysis.classification,statusProgression:analysis.queueCounters.map(value=>String(value)),
+    summary:fields(field('Queue Status',analysis.queueStatus),field('Queue Reason',analysis.skipReason),field('First Queue Time',analysis.firstQueueTimestamp?.match(/\d{2}:\d{2}:\d{2}/)?.[0]),field('Last Queue Time',analysis.lastQueueTimestamp?.match(/\d{2}:\d{2}:\d{2}/)?.[0]),field('Observed Queue Duration',duration),field('Queue Priority / Counter',analysis.queueCounters.join(' → ')),field('Routing Rules',analysis.routingRules.join(' → ')),field('Route Algo',analysis.routeAlgo),field('Route Dest Type',analysis.routeDestType),field('Route Dest Number',analysis.routeDestNumber),field('Routing State',routingState),field('Agent Selection',analysis.agentSelectionSkipped?'SKIPPED':analysis.agentSelectionStarted?'STARTED':'NOT OBSERVED')),
+    technicalDetails:fields(field('Caller',analysis.callerId),field('Transaction ID',analysis.transactionId),field('Overflow Index',analysis.overflowIndex),field('routingRuleIndex',analysis.routingRuleIndex),field('isProcessing',analysis.isProcessing),field('isRoutingCall',analysis.isRoutingCall),field('doHoldCall()',analysis.holdOccurred?'Observed':'Not observed'),field('resetState()',analysis.resetOccurred?'Observed':'Not observed'),field('Final Observed Outcome',analysis.finalOutcome),field('Candidate Blocking Transaction ID',analysis.blockingCandidateTransactionId)),
+    timeline:ordered(analysis.events.map(item=>({timestamp:item.timestamp,title:item.label,raw:item.rawLine,sortTime:item.timestampMs,lineNumber:item.lineNumber}))),finding:analysis.finding,rootCause:analysis.rootCause,recommendations:analysis.furtherCheck}
 }
 
 export function normalizeVoiceExtension(analysis:VoiceExtensionAnalysis):NormalizedAnalysisResult {

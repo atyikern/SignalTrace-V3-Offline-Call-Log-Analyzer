@@ -1,5 +1,5 @@
 export type NetworkSeverity = 'critical' | 'important' | 'media-quality'
-export type LogType = 'socketio-efv' | 'pjsip-rtt' | 'efrontvoice-ivr' | 'efrontvoice' | 'asterisk-ivr' | 'asterisk-voicemail' | 'opscentral-webhook' | 'ocod5-whatsapp' | 'routing-delay' | 'messaging-routing-delay' | 'messaging-license'
+export type LogType = 'socketio-efv' | 'pjsip-rtt' | 'efrontvoice-ivr' | 'efrontvoice' | 'asterisk-ivr' | 'asterisk-voicemail' | 'opscentral-webhook' | 'ocod5-whatsapp' | 'routing-delay' | 'call-queue' | 'messaging-routing-delay' | 'messaging-license'
 
 export interface ModuleReference {
   id: number
@@ -87,8 +87,13 @@ export interface AnalysisResult {
   whatsappMessages: WhatsappMessageAnalysis[]
   voicemailCalls: VoicemailCallAnalysis[]
   routingDelayAnalyses: RoutingDelayAnalysis[]
+  callQueueAnalyses: CallQueueAnalysis[]
   licenseOccupancyAnalyses: LicenseOccupancyAnalysis[]
 }
+
+export type CallQueueClassification = 'NORMAL QUEUE WAITING'|'QUEUE DELAY ONLY – EVENTUALLY ROUTED'|'POSSIBLE SAME-LP QUEUE BLOCK'|'POSSIBLE STALE QUEUE ENTRY'|'INCOMPLETE EVIDENCE'
+export interface CallQueueEvent { timestamp?:string; timestampMs?:number; lineNumber:number; type:'QUEUE_DATA'|'SAME_LP_SKIP'|'HOLD'|'RESET'|'ROUTING_STATE'|'ROUTING_RULE'|'ROUTE_DESTINATION'|'OVERFLOW'|'AGENT_SELECTION'|'ROUTED'|'ABANDONED'|'ENDED'; label:string; rawLine:string }
+export interface CallQueueAnalysis { key:string; callerId?:string; transactionId:string; firstQueueTimestamp?:string; lastQueueTimestamp?:string; observedQueueDurationMs?:number; queueCounters:number[]; routingRules:string[]; routeAlgo?:string; routeDestType?:string; routeDestNumber?:string; overflowIndex?:string; routingRuleIndex?:string; isProcessing?:boolean; isRoutingCall?:boolean; holdOccurred:boolean; resetOccurred:boolean; agentSelectionSkipped:boolean; skipReason?:string; agentSelectionStarted:boolean; finalOutcome:string; queueStatus:'WAITING'|'ROUTED'|'ABANDONED'|'ENDED'; classification:CallQueueClassification; finding:string; rootCause:string; furtherCheck:string[]; blockingCandidateTransactionId?:string; events:CallQueueEvent[] }
 
 export type VoicemailOutcome='No voicemail saved'|'Voicemail saved successfully'|'Mailbox configuration problem'|'Storage or permission problem'|'Voicemail application error'|'Inconclusive'
 export type VoicemailClassification='Caller hung up before recording'|'Caller or upstream channel disconnected during voicemail recording'|'Recording too short and abandoned'|'Valid voicemail saved successfully'|'Mailbox unavailable or not configured'|'File permission or storage problem'|'Voicemail application error'|'Unknown cause due to incomplete logs'
